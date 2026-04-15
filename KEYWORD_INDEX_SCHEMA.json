@@ -1,0 +1,120 @@
+{
+  "collectionName": "keyword_index",
+  "validator": {
+    "$jsonSchema": {
+      "bsonType": "object",
+      "title": "Index de Mots Clés pour Recherche Rapide",
+      "description": "Collection d'index denormalisée pour la recherche rapide des objets par mots clés",
+      "required": ["mot", "thingId", "poids"],
+      "properties": {
+        "_id": {
+          "bsonType": "objectId",
+          "description": "ID unique du document (auto-généré par MongoDB)"
+        },
+        "mot": {
+          "bsonType": "string",
+          "description": "Le mot clé normalisé (minuscules, sans accents)",
+          "minLength": 3,
+          "maxLength": 50,
+          "pattern": "^[a-zàâäæçéèêëïîôöœùûüçñáéíóúâêô]+$"
+        },
+        "thingId": {
+          "bsonType": "string",
+          "description": "L'ID de l'objet (thing) associé à ce mot clé"
+        },
+        "poids": {
+          "bsonType": "int",
+          "description": "Poids/pertinence du mot clé (plus élevé = plus pertinent). Basé sur le champ d'origine (nom=10, type=8, salle=5, etc.)",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "frequence": {
+          "bsonType": "int",
+          "description": "Nombre de fois que ce mot clé est associé à cet objet",
+          "minimum": 1
+        },
+        "object_name": {
+          "bsonType": "string",
+          "description": "Nom de l'objet (dénormalisé pour faciliter l'affichage)",
+          "maxLength": 500
+        },
+        "created_at": {
+          "bsonType": "date",
+          "description": "Date de création du document (optionnel)"
+        },
+        "updated_at": {
+          "bsonType": "date",
+          "description": "Date de dernière mise à jour (optionnel)"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "indexes": [
+    {
+      "key": { "mot": 1 },
+      "name": "idx_mot",
+      "background": true,
+      "description": "Index simple sur le mot clé - requête la plus fréquente"
+    },
+    {
+      "key": { "mot": 1, "poids": -1 },
+      "name": "idx_mot_poids",
+      "background": true,
+      "description": "Index composé pour rechercher par mot et trier par pertinence"
+    },
+    {
+      "key": { "mot": 1, "thingId": 1 },
+      "name": "idx_mot_thingId",
+      "background": true,
+      "description": "Index composé pour recherches avec filtrage par objet"
+    },
+    {
+      "key": { "thingId": 1 },
+      "name": "idx_thingId",
+      "background": true,
+      "description": "Index sur l'ID de l'objet pour retrouver tous ses mots clés"
+    },
+    {
+      "key": { "poids": -1 },
+      "name": "idx_poids",
+      "background": true,
+      "description": "Index sur le poids en ordre décroissant pour les tris par pertinence"
+    },
+    {
+      "key": { "mot": "text" },
+      "name": "idx_mot_text",
+      "background": true,
+      "weights": { "mot": 10 },
+      "description": "Index texte pour la recherche textuelle avancée"
+    }
+  ],
+  "example_documents": [
+    {
+      "_id": "ObjectId('...')",
+      "mot": "ECLAIRAGE",
+      "thingId": "507f1f77bcf86cd799439011",
+      "poids": 10,
+      "frequence": 1,
+      "object_name": "ECLAIRAGE LED Bureau",
+      "created_at": "2024-01-15T10:30:00Z"
+    },
+    {
+      "_id": "ObjectId('...')",
+      "mot": "bureau",
+      "thingId": "507f1f77bcf86cd799439011",
+      "poids": 8,
+      "frequence": 1,
+      "object_name": "ECLAIRAGE LED Bureau"
+    },
+    {
+      "_id": "ObjectId('...')",
+      "mot": "eclairage",
+      "thingId": "507f1f77bcf86cd799439011",
+      "poids": 6,
+      "frequence": 1,
+      "object_name": "ECLAIRAGE LED Bureau"
+    }
+  ]
+}
+

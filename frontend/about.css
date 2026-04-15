@@ -1,0 +1,315 @@
+.about-page {
+  min-height: 100vh;
+  padding: 140px 20px 90px;
+  background:
+    linear-gradient(180deg, rgba(8, 17, 31, 0.12), rgba(255, 255, 255, 0.02)),
+    url("https://images.unsplash.com/photo-1497366754035-f200968a6e72") center/cover fixed no-repeat;
+}
+
+.about-shell {
+  width: min(1240px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 24px;
+}
+
+.about-hero-shell {
+  overflow: hidden;
+  position: relative;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.97), rgba(244, 248, 251, 0.92));
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow: 0 22px 44px rgba(8, 17, 31, 0.16);
+  backdrop-filter: blur(16px);
+}
+
+.about-hero-shell::after {
+  content: "";
+  position: absolute;
+  inset: auto -70px -70px auto;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.18) 0, rgba(255, 255, 255, 0) 72%);
+  pointer-events: none;
+}
+
+.about-note-card {
+  display: grid;
+  gap: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.94));
+  border: 1px solid rgba(226, 232, 240, 0.92);
+}
+
+.about-note-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.about-kpi {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+}
+
+.about-kpi span {
+  display: block;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #475569;
+}
+
+.about-kpi strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 1.08rem;
+  color: #08111f;
+}
+
+.about-hero-shell .page-kicker {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.24);
+}
+
+.about-hero-shell .hero-copy h1 {
+  color: #08111f;
+  text-shadow: none;
+}
+
+.about-hero-shell .hero-copy p {
+  color: #24344f;
+  font-weight: 600;
+}
+
+.about-hero-shell .page-badge {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(100, 116, 139, 0.42);
+  color: #0f172a;
+  font-weight: 800;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.1);
+}
+
+.about-note-card .side-panel-title {
+  color: #08111f;
+}
+
+.about-note-card .side-panel-copy {
+  color: #334155;
+}
+
+.about-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.62fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.about-story-card,
+.about-architecture-shell,
+.about-cta-card {
+  padding: 30px;
+  border-radius: 32px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,255,255,0.76));
+  border: 1px solid rgba(255,255,255,0.44);
+  box-shadow: 0 18px 40px rgba(8, 17, 31, 0.14);
+  backdrop-filter: blur(20px);
+}
+
+.about-mini-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: rgba(8, 17, 31, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  color: #41506a;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.about-section-title {
+  margin: 16px 0 0;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  line-height: 0.98;
+  color: #08111f;
+}
+
+.about-story-copy,
+.section-top p {
+  margin: 16px 0 0;
+  color: #41506a;
+  line-height: 1.8;
+}
+
+.section-top {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.about-stat-grid {
+  margin-top: 4px;
+}
+
+.services {
+  padding: 14px 0 0 !important;
+}
+
+.about-services-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.service-card {
+  position: relative;
+  padding: 28px 26px 26px !important;
+}
+
+.about-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #fff;
+  box-shadow: 0 16px 28px rgba(8, 17, 31, 0.16);
+  font-size: 1.15rem;
+  margin-bottom: 16px;
+}
+
+.about-architecture {
+  padding: 0;
+}
+
+.process-card {
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(248, 250, 252, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.process-card h3 {
+  margin: 0;
+  color: #08111f;
+  font-size: 1.05rem;
+}
+
+.process-card p {
+  margin: 10px 0 0;
+  color: #41506a;
+  line-height: 1.7;
+}
+
+.about-process-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.process-card span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #fff;
+  font-size: 0.86rem;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.why-us {
+  padding: 8px 0 0 !important;
+  background: transparent !important;
+}
+
+.why-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+}
+
+.why-grid div {
+  padding: 24px !important;
+}
+
+.stats {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+}
+
+.stat {
+  padding: 18px;
+}
+
+.stat p {
+  color: #41506a;
+  line-height: 1.6;
+}
+
+.about-cta-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+}
+
+.about-auth-chip {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(8, 17, 31, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  color: #101a2c;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+@media (max-width: 1100px) {
+  .about-overview-grid,
+  .about-cta-card {
+    grid-template-columns: 1fr;
+  }
+
+  .about-services-grid,
+  .about-process-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 780px) {
+  .about-page {
+    padding: 128px 14px 54px;
+  }
+
+  .about-note-stats,
+  .about-services-grid,
+  .about-process-grid,
+  .why-grid,
+  .stats {
+    grid-template-columns: 1fr !important;
+  }
+
+  .about-story-card,
+  .about-architecture-shell,
+  .about-cta-card {
+    padding: 22px;
+    border-radius: 24px;
+  }
+}

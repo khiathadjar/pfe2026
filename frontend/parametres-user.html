@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parametres utilisateur - IntelliBuild</title>
+  <script src="config.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="theme.css">
+  <script data-theme-role-script>
+    (function () {
+      var path = (window.location.pathname.split('/').pop() || '').toLowerCase();
+      var page = path.replace('.html', '') || 'home';
+      document.documentElement.setAttribute('data-page', page);
+
+      var role = (localStorage.getItem('userRole') || '').toLowerCase();
+      if (!role) {
+        if (page.indexOf('admin') >= 0 || ['index','ajouter-objet','objets','localisations','parametres'].indexOf(page) >= 0) {
+          role = 'admin';
+        } else if (page.indexOf('user') >= 0 || ['user','mesobjet','localisations-user','parametres-user'].indexOf(page) >= 0) {
+          role = 'user';
+        } else {
+          role = 'guest';
+        }
+      }
+      document.documentElement.setAttribute('data-role', role);
+    })();
+  </script>
+  <style>
+    :root {
+      --bg-overlay: rgba(15, 23, 42, 0.48);
+      --sidebar-bg: rgba(0, 0, 0, 0.92);
+      --text-light: #ffffff;
+      --menu-link: #d1d5db;
+      --menu-hover-bg: #1f2937;
+      --menu-active-bg: #047857;
+      --menu-active-ring: rgba(16, 185, 129, 0.45);
+      --glass: rgba(255, 255, 255, 0.9);
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(var(--bg-overlay), var(--bg-overlay)),
+        url("https://images.pexels.com/photos/4040649/pexels-photo-4040649.jpeg") no-repeat center center fixed;
+      background-size: cover;
+      color: #0f172a;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .sidebar {
+      width: 280px;
+      background: var(--sidebar-bg);
+      color: var(--text-light);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 100vh;
+      position: fixed;
+      inset: 0 auto 0 0;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 50;
+    }
+
+    .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 30px; }
+    .logo img { width: 40px; }
+
+    .sidebar nav a {
+      display: block;
+      padding: 13px 14px;
+      margin: 10px 0;
+      text-decoration: none;
+      color: var(--menu-link);
+      border-radius: 10px;
+      transition: background 0.25s ease, color 0.25s ease;
+      cursor: pointer;
+    }
+
+    .sidebar nav a:hover { background: var(--menu-hover-bg); color: #fff; }
+    .sidebar nav .nav-active {
+      background: var(--menu-active-bg);
+      color: #fff;
+      box-shadow: inset 0 0 0 1px var(--menu-active-ring);
+    }
+
+    .main-wrap {
+      margin-left: 280px;
+      min-height: 100vh;
+      padding: 30px;
+      width: calc(100% - 280px);
+      max-width: calc(100% - 280px);
+    }
+
+    .glass {
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      border-radius: 20px;
+      box-shadow: 0 18px 34px rgba(15, 23, 42, 0.2);
+    }
+
+    .profile-head {
+      display: grid;
+      grid-template-columns: 90px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #0f766e, #10b981);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 34px;
+      font-weight: 800;
+      border: 4px solid #fff;
+    }
+
+    .role-pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .quick-item {
+      display: block;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #fff;
+      padding: 11px;
+      color: #0f172a;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .quick-item:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+    .table-wrap { overflow-x: auto; }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .history-table th,
+    .history-table td {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid #f1f5f9;
+      white-space: nowrap;
+    }
+
+    .history-table th {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #64748b;
+      letter-spacing: 0.04em;
+    }
+
+    .status-ok,
+    .status-ko {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .status-ok { background: #dcfce7; color: #166534; }
+    .status-ko { background: #ffe4e6; color: #be123c; }
+
+    .btn {
+      border: none;
+      border-radius: 11px;
+      padding: 11px 14px;
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .btn-primary { background: linear-gradient(135deg, #0f766e, #10b981); color: #fff; }
+    .btn-outline { background: #fff; color: #0f766e; border: 1px solid #99f6e4; }
+    .btn-danger { background: #e11d48; color: #fff; }
+
+    .overlay { position: fixed; inset: 0; display: grid; place-items: center; z-index: 1200; }
+    .overlay[hidden] { display: none; }
+    .overlay-backdrop { position: absolute; inset: 0; background: rgba(2, 6, 23, 0.66); backdrop-filter: blur(3px); }
+
+    .overlay-panel {
+      position: relative;
+      width: min(520px, calc(100vw - 26px));
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 24px 48px rgba(2, 6, 23, 0.35);
+      padding: 20px;
+    }
+
+    .input, .textarea {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 10px 12px;
+      outline: none;
+      font-size: 14px;
+      margin-top: 6px;
+    }
+
+    .textarea { min-height: 95px; resize: vertical; }
+
+    .input:focus, .textarea:focus {
+      border-color: #10b981;
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.18);
+    }
+
+    .modal-actions {
+      margin-top: 14px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .modal-actions .btn { flex: 1; }
+
+    @media (max-width: 1080px) {
+      .sidebar { position: static; width: 100%; min-height: auto; }
+      .main-wrap { margin-left: 0; padding: 16px; }
+      .quick-grid { grid-template-columns: 1fr; }
+      .profile-head { grid-template-columns: 1fr; text-align: center; }
+      .avatar { margin: 0 auto; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div>
+      <div class="logo">
+        <img src="intellibuild-mark.svg" alt="Logo IntelliBuild">
+        <h2 class="text-xl font-bold">IntelliBuild</h2>
+      </div>
+
+      <nav>
+        <a href="user.html"><i class="fas fa-home mr-2"></i><span data-key="nav_dashboard">Dashboard</span></a>
+        <a href="mesobjet.html"><i class="fas fa-box-open mr-2"></i> <span data-key="nav_my_objects">Mes objets</span></a>
+        <a href="localisations-user.html"><i class="fas fa-map-marker-alt mr-2"></i><span data-key="nav_locations">Localisations</span></a>
+        <a href="notifications-user.html"><i class="fas fa-bell mr-2"></i> <span data-key="nav_notifications">Notifications</span></a>
+        <a href="#" id="openFavoritesOverlay"><i class="fas fa-heart mr-2"></i><span>Favoris</span></a>
+        <a href="#" id="openReportsOverlay"><i class="fas fa-flag mr-2"></i><span>Signaler un problème</span></a>
+        <a href="documatation.html"><i class="fas fa-book-open mr-2"></i> <span data-key="nav_documentation">Documentation</span></a>
+        <a href="#historySection"><i class="fas fa-clock-rotate-left mr-2"></i><span data-key="nav_history">Historique</span></a>
+        <a href="#profileSection"><i class="fas fa-user-shield mr-2"></i><span data-key="nav_role">Role</span></a>
+        <a href="parametres-user.html" class="nav-active"><i class="fas fa-cog mr-2"></i> Parametres</a>
+      </nav>
+    </div>
+
+    <div class="bg-white/10 p-4 rounded-xl">
+      <div class="text-xs font-bold mb-2 uppercase opacity-80">Langue</div>
+      <select id="langSelect" class="w-full bg-slate-900 border border-white/20 rounded-lg p-2 text-sm text-white">
+        <option value="fr">FR</option>
+        <option value="en">EN</option>
+        <option value="ar">AR</option>
+      </select>
+      <p id="langNote" class="text-xs mt-2 opacity-80">Langue active: FR</p>
+    </div>
+  </aside>
+
+  <main class="main-wrap">
+    <section id="profileSection" class="glass p-6 mb-5">
+      <div class="profile-head">
+        <div id="avatarBadge" class="avatar">U</div>
+        <div>
+          <h1 id="nameLabel" class="text-3xl font-black text-slate-800 m-0">Utilisateur</h1>
+          <p id="emailValue" class="text-slate-600 mt-1 mb-2">-</p>
+          <span id="rolePill" class="role-pill">user</span>
+          <p class="text-sm text-slate-500 mt-3 mb-0">Parametres utilisateur harmonises avec IntelliBuild.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-5">
+      <article class="glass p-5 xl:col-span-2">
+        <h2 class="text-xl font-black text-slate-800 mb-3">Actions rapides</h2>
+        <div class="quick-grid">
+          <a href="user.html" class="quick-item"><i class="fas fa-home mr-2"></i><span data-key="btn_back_dashboard">Retour dashboard</span></a>
+          <a href="localisations-user.html" class="quick-item"><i class="fas fa-map mr-2"></i>Aller a localisations</a>
+          <a href="notifications-user.html" class="quick-item"><i class="fas fa-bell mr-2"></i>Voir notifications</a>
+          <a href="mesobjet.html" class="quick-item"><i class="fas fa-box-open mr-2"></i><span data-key="nav_my_objects">Mes objets</span></a>
+          <a href="reset.html" class="quick-item"><i class="fas fa-key mr-2"></i>Reinitialiser mot de passe</a>
+          <button id="openSignOutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt mr-2"></i>Sign out</button>
+        </div>
+      </article>
+
+      <article class="glass p-5 xl:col-span-1">
+        <h2 class="text-xl font-black text-slate-800 mb-3">Infos compte</h2>
+        <div class="text-sm text-slate-700 space-y-2">
+          <p class="m-0"><strong>Nom:</strong> <span id="nameMini">-</span></p>
+          <p class="m-0"><strong>Salle actuelle:</strong> <span id="roomValue">Non definie</span></p>
+          <p class="m-0"><strong>Membre depuis:</strong> <span id="memberSinceValue">-</span></p>
+        </div>
+        <div class="mt-4 flex gap-2">
+          <button id="openEditBtn" class="btn btn-primary flex-1"><i class="fas fa-pen-to-square mr-2"></i>Editer profil</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="glass p-5 mb-5">
+      <h2 class="text-xl font-black text-slate-800 mb-3">Bio utilisateur</h2>
+      <p id="bioText" class="text-slate-600 m-0">Aucune bio enregistree.</p>
+    </section>
+
+    <section id="historySection" class="glass p-5">
+      <div class="flex items-center justify-between gap-3 mb-3">
+        <h2 class="text-xl font-black text-slate-800 m-0">Historique personnel</h2>
+        <button id="refreshHistoryBtn" class="btn btn-outline">Rafraichir</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Action</th>
+              <th>Detail</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+      <p id="historyEmpty" class="text-slate-500 mt-2" hidden>Aucun historique pour cet utilisateur.</p>
+    </section>
+  </main>
+
+  <div class="overlay" id="editOverlay" hidden>
+    <div class="overlay-backdrop" id="editBackdrop"></div>
+    <div class="overlay-panel">
+      <h3 class="text-2xl font-black text-slate-800 m-0">Editer profil</h3>
+      <p class="text-slate-500 text-sm mt-1 mb-3">Modifiez votre nom affiche et votre bio.</p>
+
+      <label class="text-sm font-bold text-slate-700" for="editNameInput">Nom affiche</label>
+      <input id="editNameInput" class="input" maxlength="40" placeholder="Votre nom">
+
+      <label class="text-sm font-bold text-slate-700 mt-3 block" for="editBioInput">Bio</label>
+      <textarea id="editBioInput" class="textarea" placeholder="Parlez un peu de vous..."></textarea>
+
+      <div class="modal-actions">
+        <button id="cancelEditBtn" class="btn btn-outline">Annuler</button>
+        <button id="saveEditBtn" class="btn btn-primary">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="signOutOverlay" hidden>
+    <div class="overlay-backdrop" id="signOutBackdrop"></div>
+    <div class="overlay-panel">
+      <h3 class="text-2xl font-black text-slate-800 m-0">Deconnexion</h3>
+      <p class="text-slate-600 mt-2 mb-3">Confirmer la deconnexion du compte suivant:</p>
+      <p id="signOutEmail" class="font-black text-emerald-700 text-lg m-0">-</p>
+
+      <div class="modal-actions">
+        <button id="cancelSignOutBtn" class="btn btn-outline">Annuler</button>
+        <button id="confirmSignOutBtn" class="btn btn-danger">Oui, deconnexion</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="translations.js"></script>
+  <script>
+    const apiBase = (window.APP_CONFIG && window.APP_CONFIG.API_BASE) || "https://pfetest-api.onrender.com";
+    const token = localStorage.getItem("userToken");
+
+    const debugEnabled = (window.location.search.indexOf('debug=1') !== -1) || localStorage.getItem('debug') === '1';
+    function updateDebugPanel(lines) {
+      try {
+        let panel = document.getElementById('debugPanel');
+        if (!panel) {
+          panel = document.createElement('div');
+          panel.id = 'debugPanel';
+          panel.style.position = 'fixed';
+          panel.style.bottom = '10px';
+          panel.style.right = '10px';
+          panel.style.zIndex = '99999';
+          panel.style.maxWidth = '360px';
+          panel.style.fontSize = '12px';
+          panel.style.background = 'rgba(255,255,255,0.95)';
+          panel.style.color = '#111';
+          panel.style.border = '1px solid #ddd';
+          panel.style.padding = '8px';
+          panel.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)';
+          panel.style.overflow = 'auto';
+          panel.style.maxHeight = '40vh';
+          document.body.appendChild(panel);
+        }
+        panel.style.display = debugEnabled ? 'block' : 'none';
+        const content = [];
+        content.push('<strong>DEBUG</strong>');
+        content.push('<div><strong>token:</strong> ' + (localStorage.getItem('userToken') ? 'present' : 'missing') + '</div>');
+        content.push('<div><strong>userRole:</strong> ' + (localStorage.getItem('userRole') || '-') + '</div>');
+        content.push('<div><strong>userEmail:</strong> ' + (localStorage.getItem('userEmail') || '-') + '</div>');
+        if (lines && lines.length) {
+          content.push('<hr>');
+          lines.forEach(function (ln) { content.push('<div>' + String(ln).replace(/</g,'&lt;') + '</div>'); });
+        }
+        panel.innerHTML = content.join('');
+      } catch (e) { console.error('debug panel err', e); }
+    }
+    if (debugEnabled) updateDebugPanel();
+
+    if (!token) {
+      updateDebugPanel(['token missing - redirecting to login']);
+      window.location.href = "login.html";
+    }
+
+    const langSelect = document.getElementById("langSelect");
+    const langNote = document.getElementById("langNote");
+
+    const nameLabel = document.getElementById("nameLabel");
+    const nameMini = document.getElementById("nameMini");
+    const avatarBadge = document.getElementById("avatarBadge");
+    const emailValue = document.getElementById("emailValue");
+    const rolePill = document.getElementById("rolePill");
+    const roomValue = document.getElementById("roomValue");
+    const memberSinceValue = document.getElementById("memberSinceValue");
+    const bioText = document.getElementById("bioText");
+    const historyBody = document.getElementById("historyBody");
+    const historyEmpty = document.getElementById("historyEmpty");
+
+    const editOverlay = document.getElementById("editOverlay");
+    const editNameInput = document.getElementById("editNameInput");
+    const editBioInput = document.getElementById("editBioInput");
+    const signOutOverlay = document.getElementById("signOutOverlay");
+    const signOutEmail = document.getElementById("signOutEmail");
+
+    let currentProfile = null;
+
+    function authHeaders() {
+      return {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      };
+    }
+
+    function applyLang(lang) {
+      const locale = (lang || "fr").toLowerCase();
+      localStorage.setItem("lang", locale);
+      langSelect.value = locale;
+      langNote.textContent = `Langue active: ${locale.toUpperCase()}`;
+      if (window.setLang) window.setLang(locale);
+    }
+
+    function displayNameFromEmail(email) {
+      const base = String(email || "").split("@")[0].replace(/[._-]+/g, " ").trim();
+      if (!base) return "Utilisateur";
+      return base.replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+    }
+
+    function scopedKey(base, userId) {
+      return `${base}:${String(userId || "anonymous")}`;
+    }
+
+    function getDisplayName(profile) {
+      const uid = profile && profile.id ? String(profile.id) : "anonymous";
+      const scoped = String(localStorage.getItem(scopedKey("userDisplayName", uid)) || "").trim();
+      if (scoped) return scoped;
+
+      const apiName = String((profile && profile.display_name) || "").trim();
+      if (apiName) return apiName;
+
+      const legacy = String(localStorage.getItem("userDisplayName") || "").trim();
+      if (legacy) return legacy;
+
+      return displayNameFromEmail(profile && profile.email);
+    }
+
+    function getBio(profile) {
+      const uid = profile && profile.id ? String(profile.id) : "anonymous";
+      return String(localStorage.getItem(scopedKey("userBio", uid)) || "").trim();
+    }
+
+    function setDisplayName(profile, value) {
+      const uid = profile && profile.id ? String(profile.id) : "anonymous";
+      const clean = String(value || "").trim();
+      localStorage.setItem(scopedKey("userDisplayName", uid), clean);
+      localStorage.setItem("userDisplayName", clean);
+    }
+
+    function setBio(profile, value) {
+      const uid = profile && profile.id ? String(profile.id) : "anonymous";
+      localStorage.setItem(scopedKey("userBio", uid), String(value || "").trim());
+    }
+
+    function formatDate(raw) {
+      if (!raw) return "-";
+      const d = new Date(raw);
+      if (Number.isNaN(d.getTime())) return String(raw);
+      return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+    }
+
+    function formatDateTime(raw) {
+      if (!raw) return "-";
+      const d = new Date(raw);
+      if (Number.isNaN(d.getTime())) return String(raw);
+      return d.toLocaleString("fr-FR");
+    }
+
+    async function logAction(action, detail, status) {
+      try {
+        await fetch(`${apiBase}/user/history`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ action: action, detail: detail, status: status || "Succes" })
+        });
+      } catch (error) {
+        console.error("Erreur log:", error);
+      }
+    }
+
+    async function loadProfile() {
+      let response;
+      try {
+        response = await fetch(`${apiBase}/user/profile`, { method: "GET", headers: authHeaders() });
+      } catch (err) {
+        updateDebugPanel([ 'Network error: ' + err.message ]);
+        throw new Error("Impossible de charger le profil utilisateur (network)");
+      }
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        updateDebugPanel([ `Profile fetch failed: ${response.status}`, text ]);
+        throw new Error("Impossible de charger le profil utilisateur");
+      }
+
+      currentProfile = await response.json();
+      const email = String(currentProfile.email || localStorage.getItem("userEmail") || "");
+      const role = String(currentProfile.role || localStorage.getItem("userRole") || "user").toLowerCase();
+      if (role === "admin") {
+        window.location.href = "parametres.html";
+        return;
+      }
+
+      const uid = String(currentProfile.id || "").trim();
+      if (uid) {
+        localStorage.setItem("userId", uid);
+      }
+
+      const displayName = getDisplayName(currentProfile);
+      const bio = getBio(currentProfile);
+
+      localStorage.setItem("userEmail", email);
+      localStorage.setItem("userRole", "user");
+      if (window.refreshSidebarProfileCards) {
+        window.refreshSidebarProfileCards(currentProfile);
+      }
+
+      nameLabel.textContent = displayName;
+      nameMini.textContent = displayName;
+      avatarBadge.textContent = (displayName[0] || "U").toUpperCase();
+      emailValue.textContent = email || "-";
+      rolePill.textContent = role;
+      roomValue.textContent = localStorage.getItem("user_room") || "Non definie";
+      bioText.textContent = bio || "Aucune bio enregistree.";
+      signOutEmail.textContent = email || "-";
+
+      editNameInput.value = displayName;
+      editBioInput.value = bio;
+    }
+
+    async function loadHistory() {
+      const response = await fetch(`${apiBase}/user/history`, { method: "GET", headers: authHeaders() });
+      const data = await response.json().catch(function () { return []; });
+      const rawList = Array.isArray(data) ? data : [];
+
+      // Safety filter: only keep rows that belong to the authenticated user.
+      const currentUserId = String((currentProfile && currentProfile.id) || localStorage.getItem("userId") || "").trim();
+      const currentEmail = String((currentProfile && currentProfile.email) || localStorage.getItem("userEmail") || "").trim().toLowerCase();
+      const list = rawList.filter(function (entry) {
+        const entryUserId = String(entry && entry.user_id ? entry.user_id : "").trim();
+        const entryEmail = String(entry && entry.email ? entry.email : "").trim().toLowerCase();
+        if (currentUserId && entryUserId) return entryUserId === currentUserId;
+        if (currentEmail && entryEmail) return entryEmail === currentEmail;
+        return true;
+      });
+
+      historyBody.innerHTML = list.map(function (entry) {
+        const status = String(entry.status || "-");
+        const statusClass = status.toLowerCase().includes("succes") ? "status-ok" : "status-ko";
+        return `
+          <tr>
+            <td>${entry.date || formatDateTime(entry.created_at)}</td>
+            <td style="font-weight:700;color:#0f172a;">${entry.action || "-"}</td>
+            <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;">${entry.detail || "-"}</td>
+            <td><span class="${statusClass}">${status}</span></td>
+          </tr>
+        `;
+      }).join("");
+
+      historyEmpty.hidden = list.length > 0;
+
+      if (list.length) {
+        const oldest = list[list.length - 1];
+        memberSinceValue.textContent = formatDate(oldest.created_at || oldest.date);
+      } else {
+        memberSinceValue.textContent = formatDate(new Date().toISOString());
+      }
+    }
+
+    function openEdit() { editOverlay.hidden = false; }
+    function closeEdit() { editOverlay.hidden = true; }
+    function openSignOut() { signOutOverlay.hidden = false; }
+    function closeSignOut() { signOutOverlay.hidden = true; }
+
+    document.getElementById("openEditBtn").addEventListener("click", openEdit);
+    document.getElementById("cancelEditBtn").addEventListener("click", closeEdit);
+    document.getElementById("editBackdrop").addEventListener("click", closeEdit);
+
+    document.getElementById("saveEditBtn").addEventListener("click", async function () {
+      const name = String(editNameInput.value || "").trim();
+      const bio = String(editBioInput.value || "").trim();
+      if (!name) {
+        alert("Nom invalide.");
+        return;
+      }
+
+      setDisplayName(currentProfile, name);
+      setBio(currentProfile, bio);
+      if (window.refreshSidebarProfileCards) {
+        window.refreshSidebarProfileCards({
+          id: currentProfile && currentProfile.id,
+          email: currentProfile && currentProfile.email,
+          role: "user",
+          display_name: name
+        });
+      }
+      await logAction("Profil", "Edition du profil utilisateur", "Succes");
+      closeEdit();
+      await loadProfile();
+      await loadHistory();
+    });
+
+    document.getElementById("openSignOutBtn").addEventListener("click", openSignOut);
+    document.getElementById("cancelSignOutBtn").addEventListener("click", closeSignOut);
+    document.getElementById("signOutBackdrop").addEventListener("click", closeSignOut);
+
+    document.getElementById("confirmSignOutBtn").addEventListener("click", async function () {
+      await logAction("Session", "Deconnexion utilisateur", "Succes");
+      localStorage.removeItem("userToken");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("userEmail");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("userDisplayName");
+      window.location.href = "login.html";
+    });
+
+    document.getElementById("refreshHistoryBtn").addEventListener("click", loadHistory);
+    langSelect.addEventListener("change", function () { applyLang(langSelect.value); });
+
+    (async function init() {
+      try {
+        applyLang(localStorage.getItem("lang") || "fr");
+        await loadProfile();
+        await loadHistory();
+      } catch (error) {
+        console.error(error);
+        updateDebugPanel([ 'Init error: ' + (error && error.message ? error.message : String(error)) ]);
+        alert("Impossible de charger les parametres utilisateur.");
+      }
+    })();
+
+    (function initNavCollectionsOverlay() {
+      const favTrigger = document.getElementById("openFavoritesOverlay");
+      const repTrigger = document.getElementById("openReportsOverlay");
+      if (!favTrigger && !repTrigger) return;
+
+      function esc(v) {
+        return String(v || "").replace(/[&<>"]/g, function (ch) {
+          if (ch === "&") return "&amp;";
+          if (ch === "<") return "&lt;";
+          if (ch === ">") return "&gt;";
+          return "&quot;";
+        });
+      }
+
+      function decode(v) {
+        return String(v || "")
+          .replace(/&apos;/g, "'")
+          .replace(/&quot;/g, '"')
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&amp;/g, "&")
+          .trim();
+      }
+
+      function readJson(key) {
+        try {
+          const raw = localStorage.getItem(key);
+          const parsed = raw ? JSON.parse(raw) : [];
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function getName(item) {
+        const name = decode(item && item.name);
+        if (name) return name;
+        const id = decode(item && item.id);
+        return id ? `Objet ${id}` : "Objet sans nom";
+      }
+
+      function ensureShell() {
+        let shell = document.getElementById("navCollectionsOverlay");
+        if (shell) return shell;
+
+        const style = document.createElement("style");
+        style.id = "navCollectionsOverlayStyle";
+        style.textContent = `
+          .nav-collections-overlay { position: fixed; inset: 0; z-index: 2500; display: grid; place-items: center; }
+          .nav-collections-overlay[hidden] { display: none; }
+          .nav-collections-backdrop { position: absolute; inset: 0; background: rgba(2, 6, 23, 0.66); backdrop-filter: blur(3px); }
+          .nav-collections-panel { position: relative; width: min(860px, calc(100vw - 30px)); max-height: calc(100vh - 40px); overflow: auto; border-radius: 20px; border: 1px solid rgba(148, 163, 184, 0.3); background: rgba(255, 255, 255, 0.98); box-shadow: 0 24px 55px rgba(2, 6, 23, 0.35); }
+          .nav-collections-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px; border-bottom: 1px solid #e2e8f0; }
+          .nav-collections-title { margin: 0; font-size: 20px; color: #0f172a; }
+          .nav-collections-close { border: none; width: 34px; height: 34px; border-radius: 999px; background: #e2e8f0; color: #0f172a; font-size: 18px; cursor: pointer; }
+          .nav-collections-body { padding: 16px 18px; }
+          .nav-collections-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+          .nav-collections-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+          .nav-collections-name { margin: 0; color: #0f172a; font-weight: 700; }
+          .nav-collections-sub { margin: 4px 0 0; color: #64748b; font-size: 12px; }
+          .nav-collections-status { display: inline-block; margin-top: 8px; padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+          .nav-collections-status.pending { background: #fef3c7; color: #92400e; }
+          .nav-collections-status.done { background: #dcfce7; color: #166534; }
+          .nav-collections-status.rejected { background: #fee2e2; color: #b91c1c; }
+          .nav-collections-text { margin: 8px 0 0; color: #334155; font-size: 13px; line-height: 1.45; }
+          .nav-collections-remove { border: none; background: #fee2e2; color: #b91c1c; padding: 7px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+          .nav-collections-empty { color: #64748b; text-align: center; padding: 18px; }
+        `;
+        document.head.appendChild(style);
+
+        shell = document.createElement("div");
+        shell.id = "navCollectionsOverlay";
+        shell.className = "nav-collections-overlay";
+        shell.hidden = true;
+        shell.innerHTML = `
+          <div class="nav-collections-backdrop" id="navCollectionsBackdrop"></div>
+          <div class="nav-collections-panel" role="dialog" aria-modal="true" aria-labelledby="navCollectionsTitle">
+            <div class="nav-collections-head">
+              <h3 class="nav-collections-title" id="navCollectionsTitle">Détails</h3>
+              <button type="button" class="nav-collections-close" id="navCollectionsClose" aria-label="Fermer">x</button>
+            </div>
+            <div class="nav-collections-body" id="navCollectionsBody"></div>
+          </div>
+        `;
+        document.body.appendChild(shell);
+
+        function closeOverlay() {
+          shell.hidden = true;
+          document.body.style.overflow = "";
+        }
+
+        document.getElementById("navCollectionsBackdrop").addEventListener("click", closeOverlay);
+        document.getElementById("navCollectionsClose").addEventListener("click", closeOverlay);
+        document.addEventListener("keydown", function (event) {
+          if (event.key === "Escape" && !shell.hidden) closeOverlay();
+        });
+
+        shell.addEventListener("click", function (event) {
+          const removeFav = event.target.closest("[data-remove-fav]");
+          if (removeFav) {
+            const id = String(removeFav.getAttribute("data-remove-fav") || "");
+            const next = readJson("userFavorites").filter(function (f) {
+              return String((f && f.id) || "") !== id;
+            });
+            localStorage.setItem("userFavorites", JSON.stringify(next));
+            openFavorites();
+            return;
+          }
+
+          const removeRep = event.target.closest("[data-remove-report]");
+          if (removeRep) {
+            const idx = Number(removeRep.getAttribute("data-remove-report"));
+            const next = readJson("userReports");
+            if (Number.isInteger(idx) && idx >= 0 && idx < next.length) {
+              next.splice(idx, 1);
+              localStorage.setItem("userReports", JSON.stringify(next));
+            }
+            openReports();
+          }
+        });
+
+        return shell;
+      }
+
+      function openOverlay(title, html) {
+        const shell = ensureShell();
+        document.getElementById("navCollectionsTitle").textContent = title;
+        document.getElementById("navCollectionsBody").innerHTML = html;
+        shell.hidden = false;
+        document.body.style.overflow = "hidden";
+      }
+
+      function openFavorites() {
+        const favorites = readJson("userFavorites");
+        if (!favorites.length) {
+          openOverlay("Mes favoris", '<p class="nav-collections-empty">Aucun objet dans vos favoris pour le moment.</p>');
+          return;
+        }
+
+        const cards = favorites.map(function (fav) {
+          const id = String((fav && fav.id) || "");
+          const date = fav && fav.addedAt ? new Date(fav.addedAt).toLocaleDateString("fr-FR") : "-";
+          return `
+            <div class="nav-collections-card">
+              <div class="nav-collections-row">
+                <div>
+                  <p class="nav-collections-name">${esc(getName(fav))}</p>
+                  <p class="nav-collections-sub">Ajouté le ${esc(date)}</p>
+                </div>
+                <button type="button" class="nav-collections-remove" data-remove-fav="${esc(id)}">Retirer</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        openOverlay("Mes favoris", cards);
+      }
+
+      function statusClass(value) {
+        const txt = String(value || "").toLowerCase();
+        if (txt.includes("trait")) return "done";
+        if (txt.includes("refus") || txt.includes("rejet")) return "rejected";
+        return "pending";
+      }
+
+      function openReports() {
+        const reports = readJson("userReports");
+        if (!reports.length) {
+          openOverlay("Problèmes signalés", '<p class="nav-collections-empty">Aucun problème signalé pour le moment.</p>');
+          return;
+        }
+
+        const cards = reports.map(function (rep, idx) {
+          const date = rep && rep.reportedAt ? new Date(rep.reportedAt).toLocaleDateString("fr-FR") : "-";
+          const status = String((rep && rep.status) || "En attente");
+          return `
+            <div class="nav-collections-card">
+              <div class="nav-collections-row">
+                <div>
+                  <p class="nav-collections-name">${esc(getName(rep))}</p>
+                  <p class="nav-collections-sub"><strong>Type:</strong> ${esc((rep && rep.type) || "Non spécifié")} • ${esc(date)}</p>
+                  <span class="nav-collections-status ${statusClass(status)}">${esc(status)}</span>
+                  <p class="nav-collections-text">${esc((rep && rep.description) || "Description non fournie")}</p>
+                </div>
+                <button type="button" class="nav-collections-remove" data-remove-report="${idx}">Supprimer</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        openOverlay("Problèmes signalés", cards);
+      }
+
+      if (favTrigger) {
+        favTrigger.addEventListener("click", function (event) {
+          event.preventDefault();
+          openFavorites();
+        });
+      }
+      if (repTrigger) {
+        repTrigger.addEventListener("click", function (event) {
+          event.preventDefault();
+          openReports();
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

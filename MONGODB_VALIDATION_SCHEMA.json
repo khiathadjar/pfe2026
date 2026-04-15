@@ -1,0 +1,82 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "required": [
+      "id",
+      "name",
+      "type",
+      "location",
+      "availability",
+      "status"
+    ],
+    "properties": {
+      "_id": {
+        "bsonType": "objectId"
+      },
+      "id": {
+        "bsonType": "string",
+        "description": "Unique identifier for the thing"
+      },
+      "name": {
+        "bsonType": "string",
+        "description": "Name of the thing"
+      },
+      "search_name_norm": {
+        "bsonType": "string",
+        "description": "Normalized name for search"
+      },
+      "type": {
+        "bsonType": "string",
+        "description": "Category/type of the thing"
+      },
+      "description": {
+        "bsonType": "string",
+        "description": "Detailed description"
+      },
+      "status": {
+        "bsonType": "string",
+        "enum": ["active", "inactive", "disponible", "en_utilisation", "indisponible", "hors-ligne"],
+        "description": "Status of the thing"
+      },
+      "availability": {
+        "bsonType": "string",
+        "enum": ["disponible", "en_utilisation", "indisponible"],
+        "description": "Availability state"
+      },
+      "location": {
+        "bsonType": "object",
+        "required": ["room"],
+        "properties": {
+          "@type": {
+            "bsonType": "string"
+          },
+          "name": {
+            "bsonType": "string"
+          },
+          "room": {
+            "bsonType": "string",
+            "description": "Room/location name"
+          },
+          "x": {
+            "bsonType": ["double", "int"],
+            "description": "X coordinate"
+          },
+          "y": {
+            "bsonType": ["double", "int"],
+            "description": "Y coordinate"
+          },
+          "z": {
+            "bsonType": ["double", "int"],
+            "description": "Z coordinate"
+          }
+        }
+      },
+      "@context": {
+        "bsonType": "string"
+      },
+      "@type": {
+        "bsonType": "string"
+      }
+    }
+  }
+}

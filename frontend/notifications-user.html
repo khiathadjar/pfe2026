@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-key="notifications_user_doc_title">Notifications User - IntelliBuild</title>
+  <script src="config.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg-overlay: rgba(15, 23, 42, 0.48);
+      --panel: rgba(255, 255, 255, 0.86);
+      --sidebar-bg: rgba(0, 0, 0, 0.92);
+      --text-light: #ffffff;
+      --menu-link: #d1d5db;
+      --menu-hover-bg: #1f2937;
+      --menu-active-bg: #047857;
+      --menu-active-ring: rgba(16, 185, 129, 0.45);
+      --text: #0f172a;
+      --muted: #64748b;
+      --ok: #166534;
+      --ok-bg: #dcfce7;
+      --warn: #92400e;
+      --warn-bg: #fef3c7;
+      --info: #0c4a6e;
+      --info-bg: #e0f2fe;
+      --danger: #be123c;
+      --danger-bg: #ffe4e6;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", sans-serif;
+      font-size: 16px;
+      color: var(--text);
+      background: linear-gradient(var(--bg-overlay), var(--bg-overlay)),
+        url("https://images.pexels.com/photos/4040649/pexels-photo-4040649.jpeg") no-repeat center center fixed;
+      background-size: cover;
+    }
+
+    .container {
+      display: flex;
+      min-height: 100vh;
+      width: min(1500px, 100%);
+      margin: 0 auto;
+    }
+
+    .sidebar {
+      width: 280px;
+      background: var(--sidebar-bg);
+      color: var(--text-light);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 24px;
+      flex: 0 0 280px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .logo img {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      object-fit: contain;
+    }
+
+    .logo h2 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .sidebar nav a {
+      display: block;
+      padding: 13px 14px;
+      margin: 10px 0;
+      text-decoration: none;
+      color: var(--menu-link);
+      border-radius: 10px;
+      transition: background 0.25s ease, color 0.25s ease;
+      cursor: pointer;
+    }
+
+    .sidebar nav i {
+      width: 18px;
+      text-align: center;
+      margin-right: 10px;
+    }
+
+    .sidebar nav a:hover { background: var(--menu-hover-bg); color: #fff; }
+
+    .sidebar nav .nav-active {
+      background: var(--menu-active-bg);
+      color: #fff;
+      box-shadow: inset 0 0 0 1px var(--menu-active-ring);
+    }
+
+    .main-area {
+      flex: 1;
+      padding: 30px;
+    }
+
+    .sidebar-bottom {
+      display: grid;
+      gap: 12px;
+    }
+
+    .lang {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    .lang-title {
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .lang-select {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(17, 24, 39, 0.9);
+      color: #fff;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .wrap {
+      width: min(980px, 100%);
+      margin: 0 auto;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      border-radius: 18px;
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.35);
+      overflow: hidden;
+    }
+
+    .head {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 18px 20px;
+      border-bottom: 1px solid #e2e8f0;
+      background: linear-gradient(120deg, rgba(14, 165, 164, 0.96), rgba(15, 118, 110, 0.96));
+      color: #fff;
+    }
+
+    .title { margin: 0; font-size: 22px; }
+    .sub { margin: 6px 0 0; color: rgba(255,255,255,0.9); font-size: 13px; }
+
+    .actions { display: flex; gap: 8px; align-items: center; }
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .btn-primary { background: #0f766e; color: #fff; }
+    .btn-light { background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.45); }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .unread {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .badge {
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .notif-list { display: grid; gap: 10px; padding: 14px; }
+
+    .notif {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.95);
+      display: grid;
+      gap: 8px;
+    }
+
+    .notif.unread-item { border-color: #0ea5a4; box-shadow: 0 0 0 1px rgba(20, 184, 166, 0.2); }
+
+    .row-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .row-top h4 { margin: 0; font-size: 15px; }
+    .meta { color: var(--muted); font-size: 12px; }
+
+    .type-info { background: var(--info-bg); color: var(--info); }
+    .type-success { background: var(--ok-bg); color: var(--ok); }
+    .type-warning { background: var(--warn-bg); color: var(--warn); }
+    .type-error { background: var(--danger-bg); color: var(--danger); }
+
+    .empty { padding: 26px; text-align: center; color: var(--muted); }
+
+    @media (max-width: 740px) {
+      .container { display: block; }
+      .sidebar { width: 100%; min-height: auto; }
+      .main-area { padding: 12px; }
+      .head, .toolbar { padding: 12px; }
+      .actions { width: 100%; }
+      .btn { flex: 1; }
+    }
+  </style>
+  <link rel="stylesheet" href="theme.css">
+  <script data-theme-role-script>
+    (function () {
+      var path = (window.location.pathname.split('/').pop() || '').toLowerCase();
+      var page = path.replace('.html', '') || 'home';
+      document.documentElement.setAttribute('data-page', page);
+
+      var role = (localStorage.getItem('userRole') || '').toLowerCase();
+      if (!role) {
+        if (page.indexOf('admin') >= 0 || ['index','ajouter-objet','objets','localisations','parametres'].indexOf(page) >= 0) {
+          role = 'admin';
+        } else if (page.indexOf('user') >= 0 || ['user','mesobjet','localisations-user','parametres-user'].indexOf(page) >= 0) {
+          role = 'user';
+        } else {
+          role = 'guest';
+        }
+      }
+      document.documentElement.setAttribute('data-role', role);
+    })();
+  </script></head>
+<body>
+  <div class="container">
+  <aside class="sidebar">
+    <div>
+      <div class="logo">
+        <img src="intellibuild-mark.svg" alt="Logo IntelliBuild">
+        <h2 data-key="brand">IntelliBuild</h2>
+      </div>
+      <nav>
+        <a href="user.html"><i class="fas fa-home"></i><span data-key="nav_dashboard">Dashboard</span></a>
+        <a href="mesobjet.html"><i class="fas fa-box-open"></i><span data-key="nav_my_objects">Mes objets</span></a>
+        <a href="localisations-user.html"><i class="fas fa-map-marker-alt"></i><span data-key="nav_locations">Localisations</span></a>
+        <a href="notifications-user.html" class="nav-active"><i class="fas fa-bell"></i><span data-key="nav_notifications">Notifications</span></a>
+        <a href="#" id="openFavoritesOverlay"><i class="fas fa-heart"></i><span>Favoris</span></a>
+        <a href="#" id="openReportsOverlay"><i class="fas fa-flag"></i><span>Signaler un problème</span></a>
+        <a href="documatation.html"><i class="fas fa-book-open"></i><span data-key="nav_documentation">Documentation</span></a>
+        <a href="parametres-user.html#historySection"><i class="fas fa-clock-rotate-left"></i><span data-key="nav_history">Historique</span></a>
+        <a href="parametres-user.html#profileSection"><i class="fas fa-user-shield"></i><span data-key="nav_role">Role</span></a>
+        <a href="parametres-user.html"><i class="fas fa-cog"></i><span data-key="nav_settings">Parametres</span></a>
+      </nav>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="lang">
+        <div class="lang-title" data-key="lang_title">Langue</div>
+        <select class="lang-select" aria-label="Choisir la langue">
+          <option value="fr">FR</option>
+          <option value="en">EN</option>
+          <option value="ar">AR</option>
+        </select>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-area">
+  <main class="wrap">
+    <header class="head">
+      <div>
+        <h1 class="title" data-key="notifications_user_title">Notifications User</h1>
+        <p class="sub" data-key="notifications_user_sub">Canal personnel: vos emprunts, retours et messages utiles.</p>
+      </div>
+      <div class="actions">
+        <button class="btn btn-light" id="refreshBtn" type="button" data-key="btn_refresh">Rafraichir</button>
+        <button class="btn btn-primary" id="markAllBtn" type="button" data-key="btn_mark_all_read">Tout marquer lu</button>
+        <button class="btn btn-light" type="button" onclick="window.location.href='user.html'" data-key="btn_back_dashboard">Retour dashboard</button>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="unread">
+        <span data-key="unread_label">Non lues:</span>
+        <span class="badge type-info" id="unreadCount">0</span>
+      </div>
+    </div>
+
+    <section id="notifList" class="notif-list"></section>
+    <div id="emptyState" class="empty" hidden data-key="notifications_user_empty">Aucune notification utilisateur pour le moment.</div>
+  </main>
+  </div>
+  </div>
+
+  <script src="translations.js"></script>
+  <script>
+    const API_BASE = (window.APP_CONFIG && window.APP_CONFIG.API_BASE) || "https://pfetest-api.onrender.com";
+    const token = localStorage.getItem("userToken");
+    const role = localStorage.getItem("userRole");
+
+    const notifList = document.getElementById("notifList");
+    const emptyState = document.getElementById("emptyState");
+    const unreadCount = document.getElementById("unreadCount");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const markAllBtn = document.getElementById("markAllBtn");
+    let notificationsReady = false;
+
+    if (!token) window.location.href = "login.html";
+    if (role === "admin") window.location.href = "notifications-admin.html";
+
+    function tr(key, fallback, params) {
+      if (window.getTranslationText) return window.getTranslationText(key, fallback, params);
+      return fallback;
+    }
+
+    function getCurrentLocale() {
+      const lang = String(localStorage.getItem("lang") || "fr").toLowerCase();
+      if (lang === "ar") return "ar";
+      if (lang === "en") return "en-US";
+      return "fr-FR";
+    }
+
+    function authHeaders() {
+      return {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      };
+    }
+
+    function formatDate(value) {
+      if (!value) return "-";
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return value;
+      return d.toLocaleString(getCurrentLocale());
+    }
+
+    function typeClass(type) {
+      const t = String(type || "info").toLowerCase();
+      if (t === "success") return "type-success";
+      if (t === "warning") return "type-warning";
+      if (t === "error") return "type-error";
+      return "type-info";
+    }
+
+    async function loadCount() {
+      try {
+        const res = await fetch(`${API_BASE}/notifications/count`, { headers: authHeaders() });
+        const data = await res.json().catch(() => ({}));
+        unreadCount.textContent = String(data.unread || 0);
+      } catch {
+        unreadCount.textContent = "0";
+      }
+    }
+
+    async function markOneAsRead(id) {
+      try {
+        await fetch(`${API_BASE}/notifications/${encodeURIComponent(id)}/read`, {
+          method: "PATCH",
+          headers: authHeaders(),
+          body: JSON.stringify({ is_read: true })
+        });
+        await loadNotifications();
+      } catch (error) {
+        console.error("Erreur mark read:", error);
+      }
+    }
+
+    async function loadNotifications() {
+      try {
+        const res = await fetch(`${API_BASE}/notifications/me?limit=100`, { headers: authHeaders() });
+        const data = await res.json().catch(() => []);
+        const list = Array.isArray(data) ? data : [];
+
+        notifList.innerHTML = list.map((n) => `
+          <article class="notif ${n.is_read ? "" : "unread-item"}">
+            <div class="row-top">
+              <h4>${(n.title || tr("notification_default_title", "Notification")).replace(/</g, "&lt;")}</h4>
+              <span class="badge ${typeClass(n.type)}">${String(n.type || "info")}</span>
+            </div>
+            <div>${String(n.message || "").replace(/</g, "&lt;")}</div>
+            <div class="meta">${formatDate(n.created_at)}</div>
+            <div>
+              ${n.is_read ? "" : `<button class="btn btn-light" type="button" onclick="markOneAsRead('${n.id}')">${tr("btn_mark_read", "Marquer lu")}</button>`}
+            </div>
+          </article>
+        `).join("");
+
+        emptyState.hidden = list.length > 0;
+        await loadCount();
+      } catch (error) {
+        console.error("Erreur notifications:", error);
+        notifList.innerHTML = "";
+        emptyState.hidden = false;
+      }
+    }
+
+    async function markAllAsRead() {
+      try {
+        const res = await fetch(`${API_BASE}/notifications/read-all`, {
+          method: "PATCH",
+          headers: authHeaders()
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          alert(data.detail || tr("notif_mark_all_error", "Impossible de marquer les notifications."));
+          return;
+        }
+        await loadNotifications();
+      } catch (error) {
+        console.error("Erreur mark all:", error);
+      }
+    }
+
+    refreshBtn.addEventListener("click", loadNotifications);
+    markAllBtn.addEventListener("click", markAllAsRead);
+
+    window.markOneAsRead = markOneAsRead;
+    window.addEventListener("app:languagechange", function () {
+      if (!notificationsReady) return;
+      loadNotifications();
+    });
+    loadNotifications().finally(function () {
+      notificationsReady = true;
+    });
+
+    (function initNavCollectionsOverlay() {
+      const favTrigger = document.getElementById("openFavoritesOverlay");
+      const repTrigger = document.getElementById("openReportsOverlay");
+      if (!favTrigger && !repTrigger) return;
+
+      function esc(v) {
+        return String(v || "").replace(/[&<>"]/g, function (ch) {
+          if (ch === "&") return "&amp;";
+          if (ch === "<") return "&lt;";
+          if (ch === ">") return "&gt;";
+          return "&quot;";
+        });
+      }
+
+      function decode(v) {
+        return String(v || "")
+          .replace(/&apos;/g, "'")
+          .replace(/&quot;/g, '"')
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&amp;/g, "&")
+          .trim();
+      }
+
+      function readJson(key) {
+        try {
+          const raw = localStorage.getItem(key);
+          const parsed = raw ? JSON.parse(raw) : [];
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function getName(item) {
+        const name = decode(item && item.name);
+        if (name) return name;
+        const id = decode(item && item.id);
+        return id ? `Objet ${id}` : "Objet sans nom";
+      }
+
+      function ensureShell() {
+        let shell = document.getElementById("navCollectionsOverlay");
+        if (shell) return shell;
+
+        const style = document.createElement("style");
+        style.id = "navCollectionsOverlayStyle";
+        style.textContent = `
+          .nav-collections-overlay { position: fixed; inset: 0; z-index: 2500; display: grid; place-items: center; }
+          .nav-collections-overlay[hidden] { display: none; }
+          .nav-collections-backdrop { position: absolute; inset: 0; background: rgba(2, 6, 23, 0.66); backdrop-filter: blur(3px); }
+          .nav-collections-panel { position: relative; width: min(860px, calc(100vw - 30px)); max-height: calc(100vh - 40px); overflow: auto; border-radius: 20px; border: 1px solid rgba(148, 163, 184, 0.3); background: rgba(255, 255, 255, 0.98); box-shadow: 0 24px 55px rgba(2, 6, 23, 0.35); }
+          .nav-collections-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px; border-bottom: 1px solid #e2e8f0; }
+          .nav-collections-title { margin: 0; font-size: 20px; color: #0f172a; }
+          .nav-collections-close { border: none; width: 34px; height: 34px; border-radius: 999px; background: #e2e8f0; color: #0f172a; font-size: 18px; cursor: pointer; }
+          .nav-collections-body { padding: 16px 18px; }
+          .nav-collections-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+          .nav-collections-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+          .nav-collections-name { margin: 0; color: #0f172a; font-weight: 700; }
+          .nav-collections-sub { margin: 4px 0 0; color: #64748b; font-size: 12px; }
+          .nav-collections-status { display: inline-block; margin-top: 8px; padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+          .nav-collections-status.pending { background: #fef3c7; color: #92400e; }
+          .nav-collections-status.done { background: #dcfce7; color: #166534; }
+          .nav-collections-status.rejected { background: #fee2e2; color: #b91c1c; }
+          .nav-collections-text { margin: 8px 0 0; color: #334155; font-size: 13px; line-height: 1.45; }
+          .nav-collections-remove { border: none; background: #fee2e2; color: #b91c1c; padding: 7px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+          .nav-collections-empty { color: #64748b; text-align: center; padding: 18px; }
+        `;
+        document.head.appendChild(style);
+
+        shell = document.createElement("div");
+        shell.id = "navCollectionsOverlay";
+        shell.className = "nav-collections-overlay";
+        shell.hidden = true;
+        shell.innerHTML = `
+          <div class="nav-collections-backdrop" id="navCollectionsBackdrop"></div>
+          <div class="nav-collections-panel" role="dialog" aria-modal="true" aria-labelledby="navCollectionsTitle">
+            <div class="nav-collections-head">
+              <h3 class="nav-collections-title" id="navCollectionsTitle">Détails</h3>
+              <button type="button" class="nav-collections-close" id="navCollectionsClose" aria-label="Fermer">x</button>
+            </div>
+            <div class="nav-collections-body" id="navCollectionsBody"></div>
+          </div>
+        `;
+        document.body.appendChild(shell);
+
+        function closeOverlay() {
+          shell.hidden = true;
+          document.body.style.overflow = "";
+        }
+
+        document.getElementById("navCollectionsBackdrop").addEventListener("click", closeOverlay);
+        document.getElementById("navCollectionsClose").addEventListener("click", closeOverlay);
+        document.addEventListener("keydown", function (event) {
+          if (event.key === "Escape" && !shell.hidden) closeOverlay();
+        });
+
+        shell.addEventListener("click", function (event) {
+          const removeFav = event.target.closest("[data-remove-fav]");
+          if (removeFav) {
+            const id = String(removeFav.getAttribute("data-remove-fav") || "");
+            const next = readJson("userFavorites").filter(function (f) {
+              return String((f && f.id) || "") !== id;
+            });
+            localStorage.setItem("userFavorites", JSON.stringify(next));
+            openFavorites();
+            return;
+          }
+
+          const removeRep = event.target.closest("[data-remove-report]");
+          if (removeRep) {
+            const idx = Number(removeRep.getAttribute("data-remove-report"));
+            const next = readJson("userReports");
+            if (Number.isInteger(idx) && idx >= 0 && idx < next.length) {
+              next.splice(idx, 1);
+              localStorage.setItem("userReports", JSON.stringify(next));
+            }
+            openReports();
+          }
+        });
+
+        return shell;
+      }
+
+      function openOverlay(title, html) {
+        const shell = ensureShell();
+        document.getElementById("navCollectionsTitle").textContent = title;
+        document.getElementById("navCollectionsBody").innerHTML = html;
+        shell.hidden = false;
+        document.body.style.overflow = "hidden";
+      }
+
+      function openFavorites() {
+        const favorites = readJson("userFavorites");
+        if (!favorites.length) {
+          openOverlay("Mes favoris", '<p class="nav-collections-empty">Aucun objet dans vos favoris pour le moment.</p>');
+          return;
+        }
+
+        const cards = favorites.map(function (fav) {
+          const id = String((fav && fav.id) || "");
+          const date = fav && fav.addedAt ? new Date(fav.addedAt).toLocaleDateString("fr-FR") : "-";
+          return `
+            <div class="nav-collections-card">
+              <div class="nav-collections-row">
+                <div>
+                  <p class="nav-collections-name">${esc(getName(fav))}</p>
+                  <p class="nav-collections-sub">Ajouté le ${esc(date)}</p>
+                </div>
+                <button type="button" class="nav-collections-remove" data-remove-fav="${esc(id)}">Retirer</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        openOverlay("Mes favoris", cards);
+      }
+
+      function statusClass(value) {
+        const txt = String(value || "").toLowerCase();
+        if (txt.includes("trait")) return "done";
+        if (txt.includes("refus") || txt.includes("rejet")) return "rejected";
+        return "pending";
+      }
+
+      function openReports() {
+        const reports = readJson("userReports");
+        if (!reports.length) {
+          openOverlay("Problèmes signalés", '<p class="nav-collections-empty">Aucun problème signalé pour le moment.</p>');
+          return;
+        }
+
+        const cards = reports.map(function (rep, idx) {
+          const date = rep && rep.reportedAt ? new Date(rep.reportedAt).toLocaleDateString("fr-FR") : "-";
+          const status = String((rep && rep.status) || "En attente");
+          return `
+            <div class="nav-collections-card">
+              <div class="nav-collections-row">
+                <div>
+                  <p class="nav-collections-name">${esc(getName(rep))}</p>
+                  <p class="nav-collections-sub"><strong>Type:</strong> ${esc((rep && rep.type) || "Non spécifié")} • ${esc(date)}</p>
+                  <span class="nav-collections-status ${statusClass(status)}">${esc(status)}</span>
+                  <p class="nav-collections-text">${esc((rep && rep.description) || "Description non fournie")}</p>
+                </div>
+                <button type="button" class="nav-collections-remove" data-remove-report="${idx}">Supprimer</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        openOverlay("Problèmes signalés", cards);
+      }
+
+      if (favTrigger) {
+        favTrigger.addEventListener("click", function (event) {
+          event.preventDefault();
+          openFavorites();
+        });
+      }
+      if (repTrigger) {
+        repTrigger.addEventListener("click", function (event) {
+          event.preventDefault();
+          openReports();
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
+
+
+

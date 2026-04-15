@@ -1,0 +1,38 @@
+<svg width="512" height="512" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">IntelliBuild mark</title>
+  <desc id="desc">A modern smart-building icon with a connected signal, used as the IntelliBuild brand mark.</desc>
+  <defs>
+    <linearGradient id="bg" x1="38" y1="28" x2="212" y2="232" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#17C3B2"/>
+      <stop offset="1" stop-color="#0F766E"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(83 67) rotate(43.7) scale(153.835 145.084)">
+      <stop stop-color="#FFFFFF" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="8" y="10" width="240" height="240" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="8"/>
+      <feGaussianBlur stdDeviation="8"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.0313725 0 0 0 0 0.0666667 0 0 0 0 0.121569 0 0 0 0.22 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_1_1"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_1_1" result="shape"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="18" y="18" width="220" height="220" rx="56" fill="url(#bg)"/>
+    <rect x="18" y="18" width="220" height="220" rx="56" fill="url(#shine)"/>
+    <rect x="29" y="29" width="198" height="198" rx="45" stroke="#FFFFFF" stroke-opacity="0.28" stroke-width="2"/>
+  </g>
+  <circle cx="194" cy="84" r="13" fill="#F6B73C"/>
+  <path d="M182 58C194 58 206 65 214 76" stroke="#DDF7F2" stroke-opacity="0.72" stroke-width="8" stroke-linecap="round"/>
+  <path d="M178 102C186 100 193 96 199 90" stroke="#DDF7F2" stroke-opacity="0.62" stroke-width="7" stroke-linecap="round"/>
+  <path d="M166 118L184 96" stroke="#F8FAFC" stroke-width="10" stroke-linecap="round"/>
+  <path d="M92 184V108L128 82L164 108V184H146V154H110V184H92Z" fill="#F8FAFC"/>
+  <rect x="107" y="114" width="12" height="12" rx="4" fill="#0F766E"/>
+  <rect x="137" y="114" width="12" height="12" rx="4" fill="#0F766E"/>
+  <rect x="107" y="138" width="12" height="12" rx="4" fill="#0F766E"/>
+  <rect x="137" y="138" width="12" height="12" rx="4" fill="#0F766E"/>
+</svg>
