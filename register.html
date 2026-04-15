@@ -1,0 +1,115 @@
+<!--#page register --> 
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-key="register_doc_title">Inscription – IntelliBuild</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="theme.css">
+  <script data-theme-role-script>
+    (function () {
+      var path = (window.location.pathname.split('/').pop() || '').toLowerCase();
+      var page = path.replace('.html', '') || 'home';
+      document.documentElement.setAttribute('data-page', page);
+
+      var role = (localStorage.getItem('userRole') || '').toLowerCase();
+      if (!role) {
+        if (page.indexOf('admin') >= 0 || ['index','ajouter-objet','objets','localisations','parametres'].indexOf(page) >= 0) {
+          role = 'admin';
+        } else if (page.indexOf('user') >= 0 || ['user','mesobjet','localisations-user','parametres-user'].indexOf(page) >= 0) {
+          role = 'user';
+        } else {
+          role = 'guest';
+        }
+      }
+      document.documentElement.setAttribute('data-role', role);
+    })();
+  </script></head>
+
+<body class="auth-page">
+
+<header class="topbar">
+  <h2>
+    <div class="logo">
+      <img class="brand-logo-lg" src="intellibuild-mark.svg" alt="IntelliBuild">
+      <span data-key="brand">IntelliBuild</span>
+    </div>
+  </h2>
+  <div class="right">
+    <select class="lang">
+      <option value="fr">FR</option>
+      <option value="en">EN</option>
+      <option value="ar">AR</option>
+    </select>
+    <a href="p1.html" class="btn outline" data-key="nav_home">Accueil</a>
+  </div>
+</header>
+
+<section class="auth-container">
+  <div class="auth-showcase" aria-hidden="true">
+    <div class="auth-showcase-card">
+      <span class="showcase-kicker">Nouvelle expérience</span>
+      <h3>Créez votre espace IntelliBuild avec une UI plus premium.</h3>
+      <p>Inscription rapide, univers visuel cohérent et parcours plus rassurant dès la première visite.</p>
+      <div class="showcase-grid">
+        <div class="showcase-item">
+          <strong>Interface</strong>
+          <span>plus moderne</span>
+        </div>
+        <div class="showcase-item">
+          <strong>UX</strong>
+          <span>plus simple</span>
+        </div>
+        <div class="showcase-item">
+          <strong>Accès</strong>
+          <span>plus direct</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-box">
+
+    <h2 data-key="register_title">Créer un compte</h2>
+    <p data-key="register_sub">Rejoignez la plateforme IntelliBuild</p>
+
+    <form id="registerForm">
+
+      <label data-key="label_email">Email</label>
+      <input id="registerEmail" type="email" placeholder="exemple@mail.com" data-key="ph_email" data-attr="placeholder" required>
+
+      <label data-key="label_password">Mot de passe</label>
+      <input id="registerPassword" type="password" placeholder="••••••••" data-key="ph_password" data-attr="placeholder" required>
+
+      <label data-key="label_confirm_password">Confirmer le mot de passe</label>
+      <input id="registerConfirm" type="password" placeholder="••••••••" data-key="ph_confirm_password" data-attr="placeholder" required>
+
+      <!-- bouton inscription -->
+      <button type="submit" class="signup-btn" data-key="btn_signup">
+        S’inscrire
+      </button>
+
+    </form>
+
+    <script src="config.js"></script>
+    <script src="register.js"></script>
+
+    <span class="auth-link" data-html="true" data-key="auth_link_login"></span>
+
+  </div>
+  
+</section>
+
+<footer class="site-footer">
+  <div class="brand">
+    <img src="intellibuild-mark.svg" alt="IntelliBuild">
+    <span>IntelliBuild</span>
+  </div>
+  <div>(c) 2026 IntelliBuild. All rights reserved.</div>
+</footer>
+
+<script src="translations.js"></script>
+
+</body>
+</html>

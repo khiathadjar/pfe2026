@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IntelliBuild - Architecture 3D Interactive</title>
+    <script src="config.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-overlay: rgba(15, 23, 42, 0.48);
+            --sidebar-bg: rgba(0, 0, 0, 0.92);
+            --text-light: #ffffff;
+            --menu-link: #d1d5db;
+            --menu-hover-bg: #1f2937;
+            --menu-active-bg: #047857;
+            --menu-active-ring: rgba(16, 185, 129, 0.45);
+        }
+
+        body { 
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(var(--bg-overlay), var(--bg-overlay)),
+                url("https://images.pexels.com/photos/4040649/pexels-photo-4040649.jpeg") no-repeat center center fixed;
+            background-size: cover; 
+            min-height: 100vh;
+        }
+
+        /* --- STYLES SIDEBAR (COPIÉS DE USER.HTML) --- */
+        .sidebar {
+            width: 280px; background: var(--sidebar-bg); color: var(--text-light);
+            padding: 24px; display: flex; flex-direction: column; justify-content: space-between; 
+            min-height: 100vh; position: fixed; z-index: 50;
+        }
+        .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 30px; }
+        .logo img { width: 40px; }
+        .sidebar nav a {
+            display: flex; align-items: center; gap: 10px; padding: 13px 14px; margin: 10px 0; text-decoration: none; color: var(--menu-link);
+            border-radius: 10px; transition: background 0.25s ease, color 0.25s ease; cursor: pointer;
+        }
+        .sidebar nav i {
+            width: 18px;
+            text-align: center;
+            flex: 0 0 18px;
+        }
+        .sidebar nav a:hover { background: var(--menu-hover-bg); color: #fff; }
+        .sidebar nav .nav-active {
+            background: var(--menu-active-bg);
+            color: #fff;
+            box-shadow: inset 0 0 0 1px var(--menu-active-ring);
+        }
+        
+        /* --- PROFIL DROPDOWN --- */
+        .avatar {
+            width: 52px; height: 52px; background: #1f9d55; color: var(--text-light);
+            border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: bold; border: none;
+        }
+        .dropdown {
+            display: none; position: absolute; right: 0; top: 60px; background: rgba(255, 255, 255, 0.96);
+            padding: 15px; border-radius: 15px; width: 200px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); z-index: 100;
+        }
+        .dropdown.open { display: block; }
+        .dropdown a { display: block; padding: 10px; text-decoration: none; color: #0f172a; border-radius: 8px; }
+        .dropdown a:hover { background: #e8fce9; }
+
+        /* --- 3D CANVAS & CARDS --- */
+        .floor-card { 
+            background: rgba(255, 255, 255, 0.95); border-radius: 30px;
+            overflow: hidden; border-left: 8px solid #10b981;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; height: 550px; margin-bottom: 2rem;
+        }
+        .canvas-container { flex-grow: 1; position: relative; cursor: grab; background: radial-gradient(circle, #ffffff 0%, #cbd5e1 100%); }
+        .room-tag {
+            position: absolute; background: #1e293b; color: #f8fafc; padding: 4px 12px;
+            border-radius: 8px; font-size: 11px; font-weight: 800; pointer-events: none;
+            text-transform: uppercase; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); transform: translate(-50%, -100%); z-index: 10;
+        }
+        .you-are-here-marker {
+            position: absolute;
+            color: #dc2626;
+            font-size: 24px;
+            line-height: 1;
+            text-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+            transform: translate(-50%, -100%);
+            z-index: 25;
+            pointer-events: none;
+            display: none;
+        }
+
+        /* --- OVERLAYS --- */
+        .overlay-modal { position: fixed; inset: 0; display: grid; place-items: center; z-index: 1200; }
+        .overlay-modal[hidden] { display: none; }
+        .overlay-backdrop { position: absolute; inset: 0; background: rgba(2, 6, 23, 0.66); backdrop-filter: blur(3px); }
+        .overlay-panel {
+            position: relative; width: min(900px, calc(100vw - 32px)); max-height: calc(100vh - 48px);
+            overflow: auto; border-radius: 20px; padding: 20px; background: rgba(255, 255, 255, 0.97);
+            box-shadow: 0 24px 55px rgba(2, 6, 23, 0.35); border: 1px solid rgba(148, 163, 184, 0.25);
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 18px;
+            padding: 14px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.15);
+        }
+        .control-input,
+        .control-select {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 9px 11px;
+            outline: none;
+            font-size: 14px;
+            background: #fff;
+        }
+        .control-input:focus,
+        .control-select:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14);
+        }
+        .tiny-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            color: #0f172a;
+            font-size: 11px;
+            font-weight: 800;
+        }
+        .toast-pos {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            z-index: 1400;
+            background: #0f766e;
+            color: #fff;
+            border-radius: 12px;
+            padding: 10px 14px;
+            box-shadow: 0 14px 30px rgba(2, 6, 23, 0.35);
+            font-size: 13px;
+            font-weight: 700;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: all 0.2s ease;
+            pointer-events: none;
+        }
+        .toast-pos.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .user-mini-guide {
+            width: min(320px, 100%);
+            margin-left: auto;
+        }
+        .location-guide-card {
+            display: grid;
+            gap: 16px;
+        }
+        .location-guide-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: rgba(15, 23, 42, 0.06);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .location-guide-meta strong {
+            color: #0f172a;
+            font-size: 1rem;
+        }
+        .top-locator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto auto;
+            gap: 10px;
+            align-items: end;
+        }
+        .control-btn {
+            border: 1px solid #10b981;
+            background: #10b981;
+            color: #ffffff;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .control-btn:hover {
+            background: #059669;
+            border-color: #059669;
+        }
+        .control-btn.ghost {
+            background: #ffffff;
+            color: #0f172a;
+            border-color: #cbd5e1;
+        }
+        .control-btn.ghost:hover {
+            border-color: #10b981;
+            color: #065f46;
+        }
+        @media (max-width: 900px) {
+            .user-mini-guide {
+                width: 100%;
+            }
+            .location-guide-meta {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .top-locator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+  <link rel="stylesheet" href="theme.css">
+  <script data-theme-role-script>
+    (function () {
+      var path = (window.location.pathname.split('/').pop() || '').toLowerCase();
+      var page = path.replace('.html', '') || 'home';
+      document.documentElement.setAttribute('data-page', page);
+
+      var role = (localStorage.getItem('userRole') || '').toLowerCase();
+      if (!role) {
+        if (page.indexOf('admin') >= 0 || ['index','ajouter-objet','objets','localisations','parametres'].indexOf(page) >= 0) {
+          role = 'admin';
+        } else if (page.indexOf('user') >= 0 || ['user','mesobjet','localisations-user','parametres-user'].indexOf(page) >= 0) {
+          role = 'user';
+        } else {
+          role = 'guest';
+        }
+      }
+      document.documentElement.setAttribute('data-role', role);
+    })();
+  </script></head>
+<body class="flex">
+
+    <aside class="sidebar">
+        <div>
+            <div class="logo">
+                <img src="intellibuild-mark.svg" alt="Logo IntelliBuild">
+                <h2 class="text-xl font-bold" data-key="brand">IntelliBuild</h2>
+            </div>
+            <nav id="sideNav">
+                <a href="user.html"><i class="fas fa-home"></i><span data-key="nav_dashboard">Dashboard</span></a>
+                <a href="user.html#objectsSection"><i class="fas fa-cube"></i><span data-key="nav_objects">Objets</span></a>
+                <a href="mesobjet.html"><i class="fas fa-box-open"></i><span data-key="nav_my_objects">Mes objets</span></a>
+                <a href="localisations-user.html" class="nav-active"><i class="fas fa-map-marker-alt"></i><span data-key="nav_locations">Localisations</span></a>
+                <a href="notifications-user.html"><i class="fas fa-bell"></i><span data-key="nav_notifications">Notifications</span></a>
+                <a href="#" id="openFavoritesOverlay"><i class="fas fa-heart"></i><span>Favoris</span></a>
+                <a href="#" id="openReportsOverlay"><i class="fas fa-flag"></i><span>Signaler un problème</span></a>
+                <a href="documatation.html"><i class="fas fa-book-open"></i><span data-key="nav_documentation">Documentation</span></a>
+                <a href="#" id="openHistoryOverlay"><i class="fas fa-clock-rotate-left"></i><span data-key="nav_history">Historique</span></a>
+                <a href="#" id="openRoleOverlay"><i class="fas fa-user-shield"></i><span data-key="nav_role">Role</span></a>
+                <a href="parametres-user.html"><i class="fas fa-cog"></i><span data-key="nav_settings">Paramètres</span></a>
+            </nav>
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="bg-white/10 p-4 rounded-xl">
+                <div class="text-xs font-bold mb-2 uppercase opacity-60" data-key="lang_title">Langue</div>
+                <select id="langSelect" class="w-full bg-slate-900 border border-white/20 rounded-lg p-2 text-sm text-white">
+                    <option value="fr">FR</option>
+                    <option value="en">EN</option>
+                    <option value="ar">AR</option>
+                </select>
+            </div>
+        </div>
+    </aside>
+
+    <div class="flex-1 ml-[280px]">
+        <header class="sticky top-0 z-40 px-8 py-4 flex justify-between items-center bg-white/80 backdrop-blur-md border-b border-gray-200">
+            <div id="currentPos" class="bg-emerald-600 text-white px-5 py-2 rounded-full font-bold shadow-md">
+                <i class="fas fa-street-view mr-2"></i> Ma Position : <span id="posName">Chargement...</span>
+            </div>
+
+            <div class="relative">
+                <button class="avatar" id="profileButton">A</button>
+                <div class="dropdown" id="menu">
+                    <strong id="menuName" class="block mb-2 text-gray-800">Utilisateur</strong>
+                    <hr class="mb-2">
+                    <a href="#" id="openProfileOverlay" data-key="menu_profile">Mon profil</a>
+                    <a href="#" id="logoutLink" class="text-red-600" data-key="logout">Déconnexion</a>
+                </div>
+            </div>
+        </header>
+
+        <main class="p-8">
+            <section class="page-hero max-w-5xl mx-auto mb-8">
+                <div class="hero-copy">
+                    <span class="page-kicker"><i class="fas fa-location-dot"></i> Localisation interactive</span>
+                    <h1>Choisissez votre salle en 3D</h1>
+                    <p>Explorez chaque etage, cliquez sur une salle et mettez a jour votre position sans quitter l’architecture du batiment.</p>
+                    <div class="page-badges">
+                        <span class="page-badge"><i class="fas fa-cube"></i> Vue 3D fluide</span>
+                        <span class="page-badge"><i class="fas fa-building"></i> Etages visuels</span>
+                        <span class="page-badge"><i class="fas fa-street-view"></i> Position instantanee</span>
+                    </div>
+                </div>
+
+                <div class="hero-note-card location-guide-card">
+                    <div>
+                        <h3 class="side-panel-title">Comment l'utiliser</h3>
+                        <ul class="side-list">
+                            <li>Choisissez un etage puis cliquez directement sur la salle qui vous interesse.</li>
+                            <li>Faites glisser la scene pour voir les espaces sous plusieurs angles.</li>
+                            <li>Votre position active se met a jour des que vous selectionnez une salle.</li>
+                        </ul>
+                    </div>
+                    <div class="location-guide-meta">
+                        <span class="tiny-chip"><i class="fas fa-map-pin"></i> Salle active</span>
+                        <strong id="heroActiveRoom">Chargement...</strong>
+                    </div>
+                </div>
+            </section>
+
+            <section class="control-panel max-w-5xl mx-auto mb-6">
+                <div class="top-locator-grid">
+                    <div>
+                        <label for="quickFloorSelect" class="text-xs font-bold text-slate-600 uppercase">Etage</label>
+                        <select id="quickFloorSelect" class="control-select mt-1"></select>
+                    </div>
+                    <div>
+                        <label for="quickRoomSelect" class="text-xs font-bold text-slate-600 uppercase">Salle</label>
+                        <select id="quickRoomSelect" class="control-select mt-1"></select>
+                    </div>
+                    <button type="button" id="quickSetPositionBtn" class="control-btn"><i class="fas fa-location-dot mr-1"></i> Je suis ici</button>
+                    <button type="button" id="quickGoFloorBtn" class="control-btn ghost"><i class="fas fa-arrow-down mr-1"></i> Aller a l'etage</button>
+                </div>
+            </section>
+
+            <div id="floorContainer" class="grid grid-cols-1 gap-12 max-w-5xl mx-auto"></div>
+        </main>
+    </div>
+
+    <div class="overlay-modal" id="infoOverlay" hidden>
+        <div class="overlay-backdrop" id="overlayBackdrop"></div>
+        <div class="overlay-panel">
+            <div class="overlay-header flex justify-between items-center mb-4">
+                <h3 class="overlay-title font-bold text-xl" id="overlayTitle">Détails</h3>
+                <button class="overlay-close bg-gray-200 hover:bg-gray-300 rounded-full w-8 h-8" id="overlayClose">x</button>
+            </div>
+            <div class="overlay-body" id="overlayBody"></div>
+        </div>
+    </div>
+
+    <div id="posToast" class="toast-pos">Localisation mise a jour</div>
+
+    <script src="translations.js"></script>
+    <script>
+        // --- LOGIQUE COMMUNE (USER.HTML) ---
+        const profileButton = document.getElementById("profileButton");
+        const menu = document.getElementById("menu");
+        const menuName = document.getElementById("menuName");
+        const logoutLink = document.getElementById("logoutLink");
+        const infoOverlay = document.getElementById('infoOverlay');
+        const overlayBody = document.getElementById('overlayBody');
+        const overlayTitle = document.getElementById('overlayTitle');
+        const posToast = document.getElementById('posToast');
+        const posName = document.getElementById('posName');
+        const quickFloorSelect = document.getElementById('quickFloorSelect');
+        const quickRoomSelect = document.getElementById('quickRoomSelect');
+        const quickSetPositionBtn = document.getElementById('quickSetPositionBtn');
+        const quickGoFloorBtn = document.getElementById('quickGoFloorBtn');
+        const openFavoritesOverlay = document.getElementById('openFavoritesOverlay');
+        const openReportsOverlay = document.getElementById('openReportsOverlay');
+
+    const apiBase = (window.APP_CONFIG && window.APP_CONFIG.API_BASE) || "https://pfetest-api.onrender.com";
+        const userToken = localStorage.getItem("userToken");
+    const PROFILE_NAME_KEY = "userDisplayName";
+    let userFavorites = JSON.parse(localStorage.getItem("userFavorites") || "[]");
+    let userReports = JSON.parse(localStorage.getItem("userReports") || "[]");
+
+        if (!userToken) window.location.href = "login.html";
+
+        function openOverlay(title, html) {
+            overlayTitle.textContent = title;
+            overlayBody.innerHTML = html;
+            infoOverlay.hidden = false;
+        }
+
+        function closeOverlay() { infoOverlay.hidden = true; }
+
+        function getAuthHeaders() {
+            return {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${userToken}`
+            };
+        }
+
+        function deriveDisplayName(email) {
+            const base = String(email || "").split("@")[0].replace(/[._-]+/g, " ").trim();
+            if (!base) return "Utilisateur";
+            return base.replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+        }
+
+        async function loadUserProfile() {
+            try {
+                const response = await fetch(`${apiBase}/user/profile`, { method: "GET", headers: getAuthHeaders() });
+                if (!response.ok) return;
+
+                const profile = await response.json();
+                const email = String(profile.email || localStorage.getItem("userEmail") || "");
+                const displayName = String(localStorage.getItem(PROFILE_NAME_KEY) || "").trim() || profile.display_name || deriveDisplayName(email);
+                localStorage.setItem("userEmail", email);
+                localStorage.setItem(PROFILE_NAME_KEY, displayName);
+
+                menuName.textContent = displayName;
+                profileButton.textContent = (displayName[0] || "U").toUpperCase();
+                if (window.refreshSidebarProfileCards) {
+                    window.refreshSidebarProfileCards(profile);
+                }
+            } catch (error) {
+                console.error("Erreur profil:", error);
+            }
+        }
+
+        async function loadHistoryHtml() {
+            function formatHistoryDate(item) {
+                if (item && item.date) {
+                    return String(item.date);
+                }
+
+                const raw = item && item.created_at ? String(item.created_at) : "";
+                if (!raw) {
+                    return "-";
+                }
+
+                const parsed = new Date(raw);
+                if (Number.isNaN(parsed.getTime())) {
+                    return "-";
+                }
+
+                return parsed.toLocaleString("fr-FR");
+            }
+
+            try {
+                const response = await fetch(`${apiBase}/user/history`, { method: "GET", headers: getAuthHeaders() });
+                const history = await response.json().catch(() => []);
+                const list = Array.isArray(history) ? history : [];
+                if (!list.length) {
+                    return "<p class='text-slate-600'>Aucune action recente enregistree.</p>";
+                }
+
+                const rows = list.slice(0, 20).map((item) => `
+                    <tr class="border-b border-slate-100">
+                        <td class="p-2 text-sm text-slate-600 whitespace-nowrap">${formatHistoryDate(item)}</td>
+                        <td class="p-2 text-sm font-semibold text-slate-800">${item.action || "-"}</td>
+                        <td class="p-2 text-sm text-slate-600">${item.detail || "-"}</td>
+                        <td class="p-2 text-sm text-slate-700">${item.status || "-"}</td>
+                    </tr>
+                `).join("");
+
+                return `
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead><tr class="border-b border-slate-200 text-slate-500 text-xs uppercase"><th class="p-2">Date</th><th class="p-2">Action</th><th class="p-2">Detail</th><th class="p-2">Statut</th></tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                `;
+            } catch (error) {
+                console.error("Erreur historique:", error);
+                return "<p class='text-red-600'>Impossible de charger l'historique.</p>";
+            }
+        }
+
+        profileButton.onclick = () => menu.classList.toggle("open");
+        document.onclick = (e) => { if(!profileButton.contains(e.target) && !menu.contains(e.target)) menu.classList.remove("open"); };
+
+        logoutLink.onclick = (e) => {
+            e.preventDefault();
+            localStorage.clear();
+            window.location.href = "login.html";
+        };
+
+        // --- GESTION POSITION & 3D (TA LOGIQUE ORIGINALE) ---
+        const ARCHI_DATA = [
+            { id: 11, name: "Étage 11 - Sky Lab", color: 0x7c3aed, rooms: ["Observatoire IA", "Salle Drone", "Bureau Innovation", "War Room 11", "Studio XR", "Terrasse Technique"] },
+            { id: 10, name: "Étage 10 - Exécutif", color: 0xdc2626, rooms: ["Direction Produit", "Direction Ops", "Direction Tech", "Board Room", "Lounge 10", "Archives Exécutif"] },
+            { id: 9, name: "Étage 9 - Data Center", color: 0x2563eb, rooms: ["NOC 9A", "NOC 9B", "Réseau Core", "Salle UPS", "Stock Fibre", "Monitoring 24-7"] },
+            { id: 8, name: "Étage 8 - R&D", color: 0x0ea5e9, rooms: ["Lab IoT A", "Lab IoT B", "Prototype Hub", "Test CEM", "QA Hardware", "Atelier R&D"] },
+            { id: 7, name: "Étage 7 - Formation", color: 0x14b8a6, rooms: ["Classe 7A", "Classe 7B", "Salle Exam", "Media Room", "Cowork 7", "Coaching"] },
+            { id: 6, name: "Étage 6 - Opérations", color: 0x22c55e, rooms: ["Support N1", "Support N2", "Incident Room", "SRE Hub", "Planning", "Salle Briefing"] },
+            { id: 5, name: "Étage 5 - Collaboration", color: 0x84cc16, rooms: ["Open Space 5A", "Open Space 5B", "Salle Sprint", "Design Studio", "Salle Produit", "Archives 5"] },
+            { id: 4, name: "Étage 4 - Direction", color: 0xef4444, rooms: ["Bureau PDG", "Salle Conseil", "Salon VIP", "Terrasse", "Secrétariat", "Archives Dir."] },
+            { id: 3, name: "Étage 3 - Tech", color: 0x3b82f6, rooms: ["Open Space", "Labo Robotique", "Bureau Lead", "Réunion 3A", "Debug Zone", "Serveurs 3"] },
+            { id: 2, name: "Étage 2 - Marketing", color: 0xa855f7, rooms: ["Studio Graph.", "Bureau RH", "Compta", "Presse", "Réunion 2B", "Bureau Com"] },
+            { id: 1, name: "Étage 1 - Logistique", color: 0xf59e0b, rooms: ["Stockage", "Atelier", "Serveurs 1", "Sécurité", "Quai", "Bureau Chef"] },
+            { id: 0, name: "RDC - Public", color: 0x10b981, rooms: ["Accueil", "Cafétéria", "Showroom", "Auditorium", "Sanitaires", "Détente"] }
+        ];
+
+        const ROOM_COORDS = {
+            "Bureau PDG": { x: 10, y: 90, z: 16 },
+            "Salle Conseil": { x: 20, y: 90, z: 16 },
+            "Salon VIP": { x: 30, y: 90, z: 16 },
+            "Terrasse": { x: 40, y: 90, z: 16 },
+            "Secrétariat": { x: 50, y: 90, z: 16 },
+            "Archives Dir.": { x: 60, y: 90, z: 16 },
+            "Open Space": { x: 10, y: 70, z: 12 },
+            "Labo Robotique": { x: 20, y: 70, z: 12 },
+            "Bureau Lead": { x: 30, y: 70, z: 12 },
+            "Réunion 3A": { x: 40, y: 70, z: 12 },
+            "Debug Zone": { x: 50, y: 70, z: 12 },
+            "Serveurs 3": { x: 60, y: 70, z: 12 },
+            "Studio Graph.": { x: 10, y: 50, z: 8 },
+            "Bureau RH": { x: 20, y: 50, z: 8 },
+            "Compta": { x: 30, y: 50, z: 8 },
+            "Presse": { x: 40, y: 50, z: 8 },
+            "Réunion 2B": { x: 50, y: 50, z: 8 },
+            "Bureau Com": { x: 50, y: 50, z: 8 },
+            "Stockage": { x: 10, y: 30, z: 4 },
+            "Atelier": { x: 20, y: 30, z: 4 },
+            "Serveurs 1": { x: 30, y: 30, z: 4 },
+            "Sécurité": { x: 40, y: 30, z: 4 },
+            "Quai": { x: 50, y: 30, z: 4 },
+            "Bureau Chef": { x: 60, y: 30, z: 4 },
+            "Accueil": { x: 10, y: 10, z: 0 },
+            "Cafétéria": { x: 20, y: 10, z: 0 },
+            "Showroom": { x: 30, y: 10, z: 0 },
+            "Auditorium": { x: 40, y: 10, z: 0 },
+            "Sanitaires": { x: 50, y: 10, z: 0 },
+            "Détente": { x: 60, y: 10, z: 0 }
+        };
+
+        let toastTimer = null;
+        let activeRoomName = '';
+
+        function normalizeText(value) {
+            return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        }
+
+        function ensureRoomCoordinates() {
+            ARCHI_DATA.forEach(function (floor) {
+                floor.rooms.forEach(function (room, index) {
+                    if (ROOM_COORDS[room]) return;
+                    ROOM_COORDS[room] = {
+                        x: ((index % 3) + 1) * 12,
+                        y: (floor.id + 1) * 20,
+                        z: Math.max(0, floor.id * 4)
+                    };
+                });
+            });
+        }
+
+        function findFloorDataByRoom(room) {
+            const normalizedRoom = normalizeText(room);
+            return ARCHI_DATA.find(function (floor) {
+                return floor.rooms.some(function (candidate) {
+                    return normalizeText(candidate) === normalizedRoom;
+                });
+            }) || null;
+        }
+
+        function updateQuickRoomOptions(preferredRoom) {
+            if (!quickFloorSelect || !quickRoomSelect) return;
+
+            const floorId = Number(quickFloorSelect.value);
+            const floorData = ARCHI_DATA.find(function (floor) { return floor.id === floorId; }) || ARCHI_DATA[0];
+            const targetRoom = String(preferredRoom || '').trim();
+
+            quickRoomSelect.innerHTML = floorData.rooms.map(function (room) {
+                const isSelected = normalizeText(room) === normalizeText(targetRoom);
+                return `<option value="${room}" ${isSelected ? 'selected' : ''}>${room}</option>`;
+            }).join('');
+        }
+
+        function populateQuickSelectors(currentRoom) {
+            if (!quickFloorSelect || !quickRoomSelect) return;
+
+            quickFloorSelect.innerHTML = ARCHI_DATA.map(function (floor) {
+                return `<option value="${floor.id}">${floor.name}</option>`;
+            }).join('');
+
+            const matchedFloor = findFloorDataByRoom(currentRoom) || ARCHI_DATA[0];
+            quickFloorSelect.value = String(matchedFloor.id);
+            updateQuickRoomOptions(currentRoom);
+        }
+
+        function scrollToFloorById(floorId) {
+            const floorCard = document.querySelector(`[data-floor-id="${floorId}"]`);
+            if (!floorCard) return;
+            floorCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function updateCurrentRoomDisplays(room) {
+            const label = String(room || 'Non definie').trim() || 'Non definie';
+            activeRoomName = label;
+
+            if (posName) posName.textContent = label;
+            if (heroActiveRoom) heroActiveRoom.textContent = label;
+
+            const matchedFloor = findFloorDataByRoom(label);
+            if (matchedFloor && quickFloorSelect) {
+                quickFloorSelect.value = String(matchedFloor.id);
+                updateQuickRoomOptions(label);
+            }
+        }
+
+        function showPosToast(message) {
+            posToast.textContent = message;
+            posToast.classList.add('show');
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(function () {
+                posToast.classList.remove('show');
+            }, 1800);
+        }
+
+        function setMyPos(room) {
+            localStorage.setItem('user_room', room);
+            const coords = ROOM_COORDS[room] || { x: 0, y: 0, z: 0 };
+            localStorage.setItem('user_x', String(coords.x));
+            localStorage.setItem('user_y', String(coords.y));
+            localStorage.setItem('user_z', String(coords.z));
+            updateCurrentRoomDisplays(room);
+            showPosToast(`Localisation mise a jour: ${room}`);
+        }
+
+        function createFloor3D(containerId, rooms, floorColor) {
+            const container = document.getElementById(containerId);
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 1, 1000);
+            camera.position.set(30, 25, 30);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+
+            const clickableObjects = [];
+            const labels = [];
+            const roomAnchors = {};
+
+            const roomMarker = document.createElement('div');
+            roomMarker.className = 'you-are-here-marker';
+            roomMarker.innerHTML = '<i class="fas fa-location-dot"></i>';
+            container.appendChild(roomMarker);
+
+            rooms.forEach((roomName, index) => {
+                const group = new THREE.Group();
+                const geometry = new THREE.BoxGeometry(8, 4, 8);
+                const material = new THREE.MeshPhongMaterial({ color: floorColor, transparent: true, opacity: 0.7 });
+                const cube = new THREE.Mesh(geometry, material);
+                
+                group.position.set((index % 3) * 12 - 12, 0, Math.floor(index / 3) * 12 - 6);
+                group.add(cube);
+                group.userData = { name: roomName };
+                scene.add(group);
+                clickableObjects.push(cube);
+                roomAnchors[normalizeText(roomName)] = group.position.clone();
+
+                const label = document.createElement('div');
+                label.className = 'room-tag';
+                label.textContent = roomName;
+                container.appendChild(label);
+                labels.push({ element: label, position: group.position });
+            });
+
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+
+            renderer.domElement.addEventListener('click', (event) => {
+                const rect = renderer.domElement.getBoundingClientRect();
+                mouse.x = ((event.clientX - rect.left) / container.clientWidth) * 2 - 1;
+                mouse.y = -((event.clientY - rect.top) / container.clientHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(clickableObjects);
+                if (intersects.length > 0) setMyPos(intersects[0].object.parent.userData.name);
+            });
+
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                labels.forEach(l => {
+                    const vector = l.position.clone().project(camera);
+                    l.element.style.left = `${(vector.x * 0.5 + 0.5) * container.clientWidth}px`;
+                    l.element.style.top = `${(vector.y * -0.5 + 0.5) * container.clientHeight}px`;
+                });
+
+                const activeAnchor = roomAnchors[normalizeText(activeRoomName)];
+                if (activeAnchor) {
+                    const markerVector = activeAnchor.clone();
+                    markerVector.project(camera);
+                    roomMarker.style.left = `${(markerVector.x * 0.5 + 0.5) * container.clientWidth}px`;
+                    roomMarker.style.top = `${(markerVector.y * -0.5 + 0.5) * container.clientHeight - 4}px`;
+                    roomMarker.style.display = markerVector.z > 1 ? 'none' : 'block';
+                } else {
+                    roomMarker.style.display = 'none';
+                }
+
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+
+        function init() {
+            ensureRoomCoordinates();
+            const container = document.getElementById('floorContainer');
+            container.innerHTML = ARCHI_DATA.map(floor => `
+                <div class="floor-card" data-floor-id="${floor.id}" data-floor-name="${floor.name}" data-floor-rooms="${floor.rooms.join(' | ')}">
+                    <div class="px-8 py-4 bg-white border-b flex justify-between items-center">
+                        <h2 class="text-2xl font-black text-gray-800 uppercase italic">${floor.name}</h2>
+                    </div>
+                    <div id="canvas-${floor.id}" class="canvas-container"></div>
+                </div>
+            `).join('');
+            ARCHI_DATA.forEach(f => createFloor3D(`canvas-${f.id}`, f.rooms, f.color));
+            const currentRoom = localStorage.getItem('user_room') || "Non definie";
+            updateCurrentRoomDisplays(currentRoom);
+            populateQuickSelectors(currentRoom);
+
+            quickFloorSelect.addEventListener('change', function () {
+                updateQuickRoomOptions('');
+            });
+            quickSetPositionBtn.addEventListener('click', function () {
+                const selectedRoom = String(quickRoomSelect.value || '').trim();
+                if (!selectedRoom) return;
+                setMyPos(selectedRoom);
+            });
+            quickGoFloorBtn.addEventListener('click', function () {
+                const selectedFloor = String(quickFloorSelect.value || '').trim();
+                if (!selectedFloor) return;
+                scrollToFloorById(selectedFloor);
+            });
+            
+            loadUserProfile();
+        }
+
+        window.onload = init;
+        document.getElementById('overlayClose').onclick = closeOverlay;
+        document.getElementById('overlayBackdrop').onclick = closeOverlay;
+
+        document.getElementById('openRoleOverlay').onclick = (e) => {
+            e.preventDefault();
+            const email = localStorage.getItem("userEmail") || "-";
+            openOverlay("Mon Role", `<p class='p-2 text-slate-700'>Role: <strong>user</strong></p><p class='p-2 text-slate-700'>Email: <strong>${email}</strong></p>`);
+        };
+        document.getElementById('openHistoryOverlay').onclick = async (e) => {
+            e.preventDefault();
+            openOverlay("Historique", await loadHistoryHtml());
+        };
+
+        // --- FAVORIS ET SIGNALEMENTS ---
+        function buildFavoritesOverlayHtml() {
+            if (!userFavorites || userFavorites.length === 0) {
+                return "<p style='padding: 20px; text-align: center; color: #475569;'>Aucun objet dans vos favoris pour le moment.</p>";
+            }
+            const rows = userFavorites.map((fav) => {
+                return `
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 14px; color: #0f172a; font-weight: 600;">${fav.name}</td>
+                        <td style="padding: 14px; color: #64748b; font-size: 13px;">${new Date(fav.addedAt).toLocaleDateString('fr-FR')}</td>
+                        <td style="padding: 14px;">
+                            <button type="button" onclick="removeFavorite('${fav.id}')" style="background: #fee2e2; color: #b91c1c; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12px;">Supprimer</button>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+            return `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid #cbd5e1;">
+                                <th style="text-align: left; padding: 14px; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 700;">Objet</th>
+                                <th style="text-align: left; padding: 14px; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 700;">Ajouté le</th>
+                                <th style="text-align: left; padding: 14px; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 700;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function removeFavorite(objId) {
+            userFavorites = userFavorites.filter(f => f.id !== objId);
+            localStorage.setItem("userFavorites", JSON.stringify(userFavorites));
+            openOverlay("Mes favoris", buildFavoritesOverlayHtml());
+        }
+
+        function buildReportsOverlayHtml() {
+            if (!userReports || userReports.length === 0) {
+                return "<p style='padding: 20px; text-align: center; color: #475569;'>Aucun problème signalé pour le moment.</p>";
+            }
+            const rows = userReports.map((report, idx) => {
+                const statusBadgeStyle = report.status === "En attente" 
+                    ? "background: #fef3c7; color: #92400e;" 
+                    : report.status === "Traité" 
+                        ? "background: #dcfce7; color: #166534;"
+                        : "background: #fee2e2; color: #b91c1c;";
+                
+                return `
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 14px; color: #0f172a; font-weight: 600;">${report.name}</td>
+                        <td style="padding: 14px; color: #475569; font-size: 13px;">${report.type || "Non spécifié"}</td>
+                        <td style="padding: 14px; color: #475569; font-size: 13px;">${report.description.substring(0, 60)}...</td>
+                        <td style="padding: 14px; color: #64748b; font-size: 13px;">${new Date(report.reportedAt).toLocaleDateString('fr-FR')}</td>
+                        <td style="padding: 14px;"><span style="display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; ${statusBadgeStyle}">${report.status || "En attente"}</span></td>
+                        <td style="padding: 14px;">
+                            <button type="button" onclick="removeReport(${idx})" style="background: #fee2e2; color: #b91c1c; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12px;">Supprimer</button>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+            return `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid #cbd5e1;">
+                                <th style="text-align: left; padding: 14px; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 700;">Objet</th>
+                                <th style="text-align: left; padding: 14px; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 700;">Type</th>
+                                <th style="text-align: left; padding: 14px; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 700;">Description</th>
+                                <th style="text-align: left; padding: 14px; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 700;">Date</th>
+                                <th style="text-align: left; padding: 14px; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 700;">Statut</th>
+                                <th style="text-align: left; padding: 14px; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 700;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function removeReport(idx) {
+            userReports.splice(idx, 1);
+            localStorage.setItem("userReports", JSON.stringify(userReports));
+            openOverlay("Problèmes signalés", buildReportsOverlayHtml());
+        }
+
+        if (openFavoritesOverlay) {
+            openFavoritesOverlay.onclick = (e) => {
+                e.preventDefault();
+                openOverlay("Mes favoris", buildFavoritesOverlayHtml());
+            };
+        }
+
+        if (openReportsOverlay) {
+            openReportsOverlay.addEventListener("click", (e) => {
+                e.preventDefault();
+                openOverlay("Problèmes signalés", buildReportsOverlayHtml());
+                return false;
+            });
+        }
+    </script>
+</body>
+</html>

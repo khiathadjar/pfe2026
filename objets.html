@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IntelliBuild - Objets</title>
+    <script src="config.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { 
+            background: url('https://images.pexels.com/photos/4040649/pexels-photo-4040649.jpeg') no-repeat center center fixed;
+            background-size: cover; 
+            min-height: 100vh;
+            margin: 0;
+        }
+        .glass-sidebar {
+            width: 280px !important;
+            flex: 0 0 280px !important;
+            padding: 24px !important;
+            background: rgba(0, 0, 0, 0.92);
+            backdrop-filter: blur(4px);
+        }
+        .glass-sidebar nav {
+            gap: 0 !important;
+            margin-top: 40px !important;
+        }
+        .glass-sidebar nav a {
+            gap: 10px !important;
+            padding: 13px 14px !important;
+            margin: 10px 0 !important;
+            border-radius: 10px !important;
+            color: #d1d5db !important;
+            font-weight: 600;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+        .glass-sidebar nav a i {
+            width: 18px;
+            text-align: center;
+            flex: 0 0 18px;
+        }
+        .glass-sidebar nav a:hover {
+            background: #1f2937 !important;
+            color: #fff !important;
+        }
+        .glass-sidebar nav a.bg-emerald-700 {
+            background: #047857 !important;
+            color: #fff !important;
+            box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.45);
+        }
+        .glass-main { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
+
+        /* --- NOUVEAUX STYLES AJOUTÉS POUR LES OVERLAYS --- */
+        .overlay-modal { position: fixed; inset: 0; display: grid; place-items: center; z-index: 1200; }
+        .overlay-modal[hidden] { display: none; }
+        .overlay-backdrop { position: absolute; inset: 0; background: rgba(2, 6, 23, 0.66); backdrop-filter: blur(3px); }
+        .overlay-panel {
+            position: relative; width: min(900px, calc(100vw - 32px)); max-height: calc(100vh - 48px);
+            overflow: auto; border-radius: 20px; padding: 20px; background: rgba(255, 255, 255, 0.97);
+            box-shadow: 0 24px 55px rgba(2, 6, 23, 0.35); border: 1px solid rgba(148, 163, 184, 0.25);
+        }
+        .overlay-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+        .overlay-title { margin: 0; font-size: 22px; color: #0f172a; }
+        .overlay-close { border: none; width: 36px; height: 36px; border-radius: 999px; background: #e2e8f0; color: #0f172a; font-size: 18px; cursor: pointer; }
+        .overlay-close:hover { background: #cbd5e1; }
+        .role-chip { display: inline-block; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #065f46; background: #d1fae5; }
+        .role-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 14px; }
+        .role-item { background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 12px; padding: 12px; }
+        .role-item h4 { margin: 0 0 6px; font-size: 14px; color: #0f172a; }
+        .role-item p { margin: 0; font-size: 13px; color: #334155; }
+        .objects-toolbar-shell { display: grid; gap: 16px; align-items: center; }
+        .objects-search { min-width: 0; }
+        .objects-filter-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            min-width: 0;
+        }
+        .objects-filter-row .filter-chip {
+            white-space: nowrap;
+            flex: 0 0 auto;
+        }
+        .objects-toolbar-note {
+            margin: 0;
+            white-space: nowrap;
+        }
+        @media (min-width: 1280px) {
+            .objects-toolbar-shell {
+                grid-template-columns: minmax(300px, 360px) minmax(0, 1fr) auto;
+            }
+            .objects-filter-row {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                padding-bottom: 4px;
+            }
+        }
+        @media (max-width: 1279px) {
+            .objects-toolbar-note {
+                white-space: normal;
+            }
+        }
+
+    </style>
+  <link rel="stylesheet" href="theme.css">
+  <script data-theme-role-script>
+    (function () {
+      var path = (window.location.pathname.split('/').pop() || '').toLowerCase();
+      var page = path.replace('.html', '') || 'home';
+      document.documentElement.setAttribute('data-page', page);
+
+      var role = (localStorage.getItem('userRole') || '').toLowerCase();
+      if (!role) {
+        if (page.indexOf('admin') >= 0 || ['index','ajouter-objet','objets','localisations','parametres'].indexOf(page) >= 0) {
+          role = 'admin';
+        } else if (page.indexOf('user') >= 0 || ['user','mesobjet','localisations-user','parametres-user'].indexOf(page) >= 0) {
+          role = 'user';
+        } else {
+          role = 'guest';
+        }
+      }
+      document.documentElement.setAttribute('data-role', role);
+    })();
+  </script></head>
+<body class="flex">
+    <script>
+        if (!localStorage.getItem('userToken')) {
+            window.location.href = "login.html";
+        }
+    </script>
+
+    <aside class="w-64 glass-sidebar min-h-screen text-gray-300 p-6 flex flex-col gap-6 shadow-2xl">
+        <div class="text-2xl font-bold flex items-center gap-2 text-white">
+            <img src="intellibuild-mark.svg" alt="IntelliBuild" class="h-10 w-10 rounded-full object-contain">
+            <span>IntelliBuild</span>
+        </div>
+        <select class="lang w-full bg-gray-800 text-gray-200 rounded-lg p-2 text-sm">
+            <option value="fr">FR</option>
+            <option value="en">EN</option>
+            <option value="ar">AR</option>
+        </select>
+        <nav class="flex flex-col gap-4 mt-10">
+            <a href="index.html" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
+                <i class="fas fa-home"></i> <span data-key="nav_dashboard">Dashboard</span>
+            </a>
+            <a href="ajouter-objet.html" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
+                <i class="fas fa-plus"></i> <span data-key="nav_add">Ajouter</span>
+            </a>
+            
+            <a href="objets.html" class="bg-emerald-700 p-3 rounded-lg flex items-center gap-3 text-white shadow-lg">
+                <i class="fas fa-cube"></i> <span data-key="nav_objects">Objets</span>
+            </a>
+
+            <a href="localisations.html" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
+                <i class="fas fa-map-marker-alt"></i> <span data-key="nav_locations">Localisations</span>
+            </a>
+            
+            <a href="#" id="openHistoryOverlay" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
+                <i class="fas fa-clock-rotate-left"></i> <span data-key="nav_history">Historique</span>
+            </a>
+            <a href="#" id="openRoleOverlay" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
+                <i class="fas fa-user-shield"></i> <span data-key="nav_role">Role</span>
+            </a>
+
+            <a href="notifications-admin.html" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
+                <i class="fas fa-bell"></i> <span data-key="nav_notifications">Notifications</span>
+            </a>
+            <a href="documatation.html" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
+                <i class="fas fa-book-open"></i> <span data-key="nav_documentation">Documentation</span>
+            </a>
+            
+            <a href="parametres.html" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition mt-auto">
+                <i class="fas fa-cog"></i> <span data-key="nav_settings">Paramètres</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 p-8">
+        <section class="page-hero glass-main">
+            <div class="hero-copy">
+                <span class="page-kicker">Catalogue objets</span>
+                <h1>Supervisez tout l’inventaire connecté</h1>
+                <p>Retrouvez, filtrez et administrez rapidement chaque objet du bâtiment depuis un catalogue plus visuel et plus fluide.</p>
+                <div class="page-badges">
+                    <span class="page-badge">Recherche rapide</span>
+                    <span class="page-badge">Edition immédiate</span>
+                    <span class="page-badge">Vue centralisée</span>
+                </div>
+            </div>
+            <div class="page-actions">
+                <a href="ajouter-objet.html" class="quick-link quick-link-primary">Créer un nouvel objet</a>
+                <a href="localisations.html" class="quick-link">Ouvrir la carte 3D</a>
+                <button type="button" id="showAllObjectsBtn" class="quick-link">Réinitialiser la recherche</button>
+            </div>
+        </section>
+
+        <section class="page-stat-grid page-stat-grid--four mb-8">
+            <article class="page-stat-card">
+                <p class="page-stat-label">Objets affichés</p>
+                <p id="objMetricTotal" class="page-stat-value">0</p>
+                <p id="objMetricTotalNote" class="page-stat-note">Inventaire visible à l’écran.</p>
+            </article>
+            <article class="page-stat-card">
+                <p class="page-stat-label">Disponibles</p>
+                <p id="objMetricActive" class="page-stat-value">0</p>
+                <p class="page-stat-note">Objets actifs ou disponibles.</p>
+            </article>
+            <article class="page-stat-card">
+                <p class="page-stat-label">À surveiller</p>
+                <p id="objMetricInactive" class="page-stat-value">0</p>
+                <p class="page-stat-note">Objets inactifs ou hors service.</p>
+            </article>
+            <article class="page-stat-card">
+                <p class="page-stat-label">Salles couvertes</p>
+                <p id="objMetricLocations" class="page-stat-value">0</p>
+                <p class="page-stat-note">Localisations distinctes trouvées.</p>
+            </article>
+        </section>
+
+        <div class="page-toolbar mb-8">
+            <div class="objects-toolbar-shell">
+                <div class="objects-search relative">
+                    <input type="text" id="objSearch" placeholder="Rechercher un objet..." data-key="search_objects" data-attr="placeholder" class="w-full p-2 pl-10 rounded-xl border-none shadow-sm bg-white/90 focus:ring-2 focus:ring-emerald-600 outline-none">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                </div>
+                <div id="objQuickFilters" class="objects-filter-row">
+                    <button type="button" class="filter-chip is-active" data-quick-query="">Tout</button>
+                </div>
+                <p id="objResultHint" class="page-stat-note objects-toolbar-note">Chargement du catalogue...</p>
+            </div>
+        </div>
+
+        <div class="glass-main p-6 rounded-3xl shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800"><i class="fas fa-cube text-emerald-600"></i> <span data-key="objects_all">Tous les objets</span></h2>
+                <button onclick="window.location.href='ajouter-objet.html'" class="bg-emerald-700 text-white px-5 py-2.5 rounded-xl hover:bg-emerald-800 transition">
+                    <i class="fas fa-plus"></i> <span data-key="new_object">Nouvel objet</span>
+                </button>
+            </div>
+
+            <div id="objGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                </div>
+        </div>
+
+        <footer class="glass-main mt-8 p-3 rounded-2xl flex items-center justify-between text-[11px] text-gray-700">
+            <div class="flex items-center gap-2 font-semibold text-gray-800">
+                <img src="intellibuild-mark.svg" alt="IntelliBuild" class="h-6 w-6 rounded-full object-contain">
+                <span>IntelliBuild</span>
+            </div>
+            <div>(c) 2026 IntelliBuild. All rights reserved.</div>
+        </footer>
+    </main>
+
+    <div class="overlay-modal" id="infoOverlay" hidden aria-hidden="true">
+        <div class="overlay-backdrop" id="overlayBackdrop"></div>
+        <div class="overlay-panel" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
+            <div class="overlay-header">
+                <h3 class="overlay-title" id="overlayTitle">Details</h3>
+                <button class="overlay-close" id="overlayClose" type="button" aria-label="Fermer">x</button>
+            </div>
+            <div class="overlay-body" id="overlayBody"></div>
+        </div>
+    </div>
+
+    <script src="translations.js"></script>
+    <script>
+        const apiBase = (window.APP_CONFIG && window.APP_CONFIG.API_BASE) || 'https://pfetest-api.onrender.com';
+        
+        // --- VARIABLES GLOBALES POUR L'OVERLAY ---
+        const openHistoryOverlay = document.getElementById('openHistoryOverlay');
+        const openRoleOverlay = document.getElementById('openRoleOverlay');
+        const infoOverlay = document.getElementById('infoOverlay');
+        const overlayBackdrop = document.getElementById('overlayBackdrop');
+        const overlayClose = document.getElementById('overlayClose');
+        const overlayTitle = document.getElementById('overlayTitle');
+        const overlayBody = document.getElementById('overlayBody');
+        const objGrid = document.getElementById('objGrid');
+        const objSearch = document.getElementById('objSearch');
+        const objMetricTotal = document.getElementById('objMetricTotal');
+        const objMetricActive = document.getElementById('objMetricActive');
+        const objMetricInactive = document.getElementById('objMetricInactive');
+        const objMetricLocations = document.getElementById('objMetricLocations');
+        const objMetricTotalNote = document.getElementById('objMetricTotalNote');
+        const objResultHint = document.getElementById('objResultHint');
+        const objQuickFilters = document.getElementById('objQuickFilters');
+        const showAllObjectsBtn = document.getElementById('showAllObjectsBtn');
+        const objectCacheById = {};
+        let objectTypeFilters = [];
+        let editingThingId = '';
+
+        // --- FONCTIONS DE L'OVERLAY ---
+        function tr(key, fallback) {
+            const locale = (localStorage.getItem('lang') || 'fr').toLowerCase();
+            if (typeof translations !== 'undefined' && translations[locale] && translations[locale][key] !== undefined) {
+                return translations[locale][key];
+            }
+            return fallback;
+        }
+
+        function openOverlay(title, htmlContent) {
+            overlayTitle.textContent = title;
+            overlayBody.innerHTML = htmlContent;
+            infoOverlay.hidden = false;
+            infoOverlay.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeOverlay() {
+            infoOverlay.hidden = true;
+            infoOverlay.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        }
+
+        function authHeaders() {
+            const token = localStorage.getItem('userToken') || '';
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+        }
+
+        function isAdminHistoryEntry(entry) {
+            const action = String(entry && entry.action ? entry.action : '').trim().toLowerCase();
+            return action.includes('admin') || ['utilisateurs', 'session', 'profil', 'navigation'].includes(action);
+        }
+
+        function buildHistoryOverlayHtml(history) {
+            const rows = history.map(item => `
+                <tr>
+                    <td class="p-3 text-sm text-slate-600">${item.date || '-'}</td>
+                    <td class="p-3 text-sm font-semibold text-slate-700">${item.action || '-'}</td>
+                    <td class="p-3 text-sm">${item.detail || '-'}</td>
+                    <td class="p-3 text-sm"><span class="px-3 py-1 rounded-full text-xs font-bold ${String(item.status || '').toLowerCase().includes('succes') ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-700'}">${item.status || '-'}</span></td>
+                </tr>`).join('');
+            const emptyRow = history.length ? '' : '<tr><td colspan="4" class="p-3 text-sm text-slate-500">Aucune action admin pour le moment.</td></tr>';
+            return `<div class="p-2">
+                        <h3 class="text-xl font-bold mb-4">Historique admin</h3>
+                        <div class="overflow-x-auto"><table class="w-full text-left"><tbody class="divide-y divide-gray-200">${rows || emptyRow}</tbody></table></div>
+                    </div>`;
+        }
+
+        function buildRoleOverlayHtml() {
+            return `<div class="p-2">
+                        <h3 class="text-xl font-bold mb-4">Role admin</h3>
+                        <span class="role-chip">Admin</span>
+                        <div class="role-grid">
+                            <div class="role-item"><h4>Gestion objets</h4><p>Accès complet aux objets.</p></div>
+                            <div class="role-item"><h4>Supervision</h4><p>Accès aux statistiques.</p></div>
+                        </div>
+                    </div>`;
+        }
+
+        async function fetchAdminHistory() {
+            const response = await fetch(`${apiBase}/user/history`, { method: 'GET', headers: authHeaders() });
+            const data = await response.json().catch(function () { return []; });
+            const list = Array.isArray(data) ? data : [];
+            return list.filter(isAdminHistoryEntry);
+        }
+
+        function buildDetailOverlayHtml(details) {
+            return `
+                <div class="p-2">
+                    <h3 class="text-xl font-bold mb-4">Detail de l'objet</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div class="bg-white/90 rounded-xl p-4 border border-slate-200"><p class="text-slate-500 font-semibold">Nom</p><p class="font-bold text-slate-800 mt-1">${escapeHtml(details.name || '-')}</p></div>
+                        <div class="bg-white/90 rounded-xl p-4 border border-slate-200"><p class="text-slate-500 font-semibold">Type</p><p class="font-bold text-slate-800 mt-1">${escapeHtml(details.type || '-')}</p></div>
+                        <div class="bg-white/90 rounded-xl p-4 border border-slate-200"><p class="text-slate-500 font-semibold">Localisation</p><p class="font-bold text-slate-800 mt-1">${escapeHtml(details.location || '-')}</p></div>
+                        <div class="bg-white/90 rounded-xl p-4 border border-slate-200"><p class="text-slate-500 font-semibold">Statut</p><p class="font-bold text-slate-800 mt-1">${escapeHtml(details.status || '-')}</p></div>
+                        <div class="md:col-span-2 bg-white/90 rounded-xl p-4 border border-slate-200"><p class="text-slate-500 font-semibold">Description</p><p class="font-bold text-slate-800 mt-1">${escapeHtml(details.description || '-')}</p></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildEditOverlayHtml(details) {
+            return `
+                <div class="p-2">
+                    <h3 class="text-xl font-bold mb-4">Modification objet</h3>
+                    <form id="editThingForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <label class="block">
+                            <span class="text-slate-600 font-semibold">Nom</span>
+                            <input id="editName" type="text" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" value="${escapeHtml(details.name || '')}">
+                        </label>
+                        <label class="block">
+                            <span class="text-slate-600 font-semibold">Type</span>
+                            <input id="editType" type="text" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" value="${escapeHtml(details.type || '')}">
+                        </label>
+                        <label class="block">
+                            <span class="text-slate-600 font-semibold">Localisation</span>
+                            <select id="editLocation" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                                <option value="">-- Selectionner une salle --</option>
+                                <optgroup label="RDC">
+                                    <option value="Accueil">Accueil</option>
+                                    <option value="Cafétéria">Cafétéria</option>
+                                    <option value="Showroom">Showroom</option>
+                                    <option value="Auditorium">Auditorium</option>
+                                    <option value="Sanitaires">Sanitaires</option>
+                                    <option value="Espace Détente">Espace Détente</option>
+                                </optgroup>
+                                <optgroup label="1er étage">
+                                    <option value="Zone de Stockage">Zone de Stockage</option>
+                                    <option value="Atelier Réparation">Atelier Réparation</option>
+                                    <option value="Local Serveurs">Local Serveurs</option>
+                                    <option value="Poste Sécurité">Poste Sécurité</option>
+                                    <option value="Quai d'Expédition">Quai d'Expédition</option>
+                                    <option value="Bureau Chef">Bureau Chef</option>
+                                </optgroup>
+                                <optgroup label="2ème étage">
+                                    <option value="Studio Graphique">Studio Graphique</option>
+                                    <option value="Bureau RH">Bureau RH</option>
+                                    <option value="Comptabilité">Comptabilité</option>
+                                    <option value="Salle de Presse">Salle de Presse</option>
+                                    <option value="Réunion 2B">Réunion 2B</option>
+                                    <option value="Bureau Com">Bureau Com</option>
+                                </optgroup>
+                                <optgroup label="3ème étage">
+                                    <option value="Open Space Alpha">Open Space Alpha</option>
+                                    <option value="Labo Robotique">Labo Robotique</option>
+                                    <option value="Bureau Lead Dev">Bureau Lead Dev</option>
+                                    <option value="Salle Réunion 3A">Salle Réunion 3A</option>
+                                    <option value="Zone Debug">Zone Debug</option>
+                                    <option value="Serveurs 3">Serveurs 3</option>
+                                </optgroup>
+                                <optgroup label="4ème étage">
+                                    <option value="Bureau PDG">Bureau PDG</option>
+                                    <option value="Salle du Conseil">Salle du Conseil</option>
+                                    <option value="Salon VIP">Salon VIP</option>
+                                    <option value="Terrasse Privée">Terrasse Privée</option>
+                                    <option value="Secrétariat">Secrétariat</option>
+                                    <option value="Archives Dir.">Archives Dir.</option>
+                                </optgroup>
+                                <optgroup label="Étage 5">
+                                    <option value="Open Space 5A">Open Space 5A</option>
+                                    <option value="Open Space 5B">Open Space 5B</option>
+                                    <option value="Salle Sprint">Salle Sprint</option>
+                                    <option value="Design Studio">Design Studio</option>
+                                    <option value="Salle Produit">Salle Produit</option>
+                                    <option value="Archives 5">Archives 5</option>
+                                </optgroup>
+                                <optgroup label="Étage 6">
+                                    <option value="Support N1">Support N1</option>
+                                    <option value="Support N2">Support N2</option>
+                                    <option value="Incident Room">Incident Room</option>
+                                    <option value="SRE Hub">SRE Hub</option>
+                                    <option value="Planning">Planning</option>
+                                    <option value="Salle Briefing">Salle Briefing</option>
+                                </optgroup>
+                                <optgroup label="Étage 7">
+                                    <option value="Classe 7A">Classe 7A</option>
+                                    <option value="Classe 7B">Classe 7B</option>
+                                    <option value="Salle Exam">Salle Exam</option>
+                                    <option value="Media Room">Media Room</option>
+                                    <option value="Cowork 7">Cowork 7</option>
+                                    <option value="Coaching">Coaching</option>
+                                </optgroup>
+                                <optgroup label="Étage 8">
+                                    <option value="Lab IoT A">Lab IoT A</option>
+                                    <option value="Lab IoT B">Lab IoT B</option>
+                                    <option value="Prototype Hub">Prototype Hub</option>
+                                    <option value="Test CEM">Test CEM</option>
+                                    <option value="QA Hardware">QA Hardware</option>
+                                    <option value="Atelier R&D">Atelier R&D</option>
+                                </optgroup>
+                                <optgroup label="Étage 9">
+                                    <option value="NOC 9A">NOC 9A</option>
+                                    <option value="NOC 9B">NOC 9B</option>
+                                    <option value="Réseau Core">Réseau Core</option>
+                                    <option value="Salle UPS">Salle UPS</option>
+                                    <option value="Stock Fibre">Stock Fibre</option>
+                                    <option value="Monitoring 24-7">Monitoring 24-7</option>
+                                </optgroup>
+                                <optgroup label="Étage 10">
+                                    <option value="Direction Produit">Direction Produit</option>
+                                    <option value="Direction Ops">Direction Ops</option>
+                                    <option value="Direction Tech">Direction Tech</option>
+                                    <option value="Board Room">Board Room</option>
+                                    <option value="Lounge 10">Lounge 10</option>
+                                    <option value="Archives Exécutif">Archives Exécutif</option>
+                                </optgroup>
+                                <optgroup label="Étage 11">
+                                    <option value="Observatoire IA">Observatoire IA</option>
+                                    <option value="Salle Drone">Salle Drone</option>
+                                    <option value="Bureau Innovation">Bureau Innovation</option>
+                                    <option value="War Room 11">War Room 11</option>
+                                    <option value="Studio XR">Studio XR</option>
+                                    <option value="Terrasse Technique">Terrasse Technique</option>
+                                </optgroup>
+                            </select>
+                        </label>
+                        <label class="block">
+                            <span class="text-slate-600 font-semibold">Statut</span>
+                            <select id="editStatus" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                                <option value="active" ${String(details.status || '').toLowerCase() === 'active' ? 'selected' : ''}>active</option>
+                                <option value="inactive" ${String(details.status || '').toLowerCase() !== 'active' ? 'selected' : ''}>inactive</option>
+                            </select>
+                        </label>
+                        <label class="md:col-span-2 block">
+                            <span class="text-slate-600 font-semibold">Description</span>
+                            <textarea id="editDescription" rows="3" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">${escapeHtml(details.description || '')}</textarea>
+                        </label>
+                        <label class="md:col-span-2 block">
+                            <span class="text-slate-600 font-semibold">Endpoint reseau REST</span>
+                            <input id="editEndpoint" type="url" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" value="${escapeHtml(details.endpoint_url || '')}" placeholder="Ex: http://192.168.100.21:3001">
+                        </label>
+                        <div class="md:col-span-2 flex justify-end gap-2 pt-1">
+                            <button type="button" onclick="closeOverlay()" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-800">Annuler</button>
+                            <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 text-white">Enregistrer</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+        }
+
+        function normalizeText(value) {
+            return String(value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim();
+        }
+
+        function escapeHtml(value) {
+            return String(value || '').replace(/[&<>"']/g, function (ch) {
+                if (ch === '&') return '&amp;';
+                if (ch === '<') return '&lt;';
+                if (ch === '>') return '&gt;';
+                if (ch === '"') return '&quot;';
+                return '&#39;';
+            });
+        }
+
+        function extractRoomLabel(item) {
+            return String(item && item.location && item.location.room ? item.location.room : item && item.location ? item.location : '').trim();
+        }
+
+        function extractTypeFilters(list) {
+            const labelsByKey = new Map();
+            list.forEach(function (item) {
+                const typeLabel = String(item && (item.type || item['@type']) ? (item.type || item['@type']) : '').trim();
+                const typeKey = normalizeText(typeLabel);
+                if (!typeKey || labelsByKey.has(typeKey)) return;
+                labelsByKey.set(typeKey, typeLabel);
+            });
+            return Array.from(labelsByKey.values()).sort(function (a, b) {
+                return a.localeCompare(b, 'fr', { sensitivity: 'base' });
+            });
+        }
+
+        function renderQuickFilters() {
+            if (!objQuickFilters) return;
+            const activeQuery = objSearch ? String(objSearch.value || '') : '';
+            const buttons = [{ label: 'Tout', query: '' }].concat(
+                objectTypeFilters.map(function (label) {
+                    return { label: label, query: label };
+                })
+            );
+
+            objQuickFilters.innerHTML = buttons.map(function (button) {
+                return `<button type="button" class="filter-chip" data-quick-query="${escapeHtml(button.query)}">${escapeHtml(button.label)}</button>`;
+            }).join('');
+
+            setActiveFilterChip(activeQuery);
+        }
+
+        function syncQuickFilters(list, query) {
+            const discoveredTypes = extractTypeFilters(list);
+            if (!objectTypeFilters.length || !String(query || '').trim()) {
+                objectTypeFilters = discoveredTypes;
+            } else {
+                const known = new Map(objectTypeFilters.map(function (label) {
+                    return [normalizeText(label), label];
+                }));
+                discoveredTypes.forEach(function (label) {
+                    const key = normalizeText(label);
+                    if (!known.has(key)) {
+                        known.set(key, label);
+                        objectTypeFilters.push(label);
+                    }
+                });
+                objectTypeFilters.sort(function (a, b) {
+                    return a.localeCompare(b, 'fr', { sensitivity: 'base' });
+                });
+            }
+            renderQuickFilters();
+        }
+
+        function setActiveFilterChip(query) {
+            const normalizedQuery = normalizeText(query);
+            const quickFilterButtons = Array.from(document.querySelectorAll('#objQuickFilters [data-quick-query]'));
+            quickFilterButtons.forEach(function (button) {
+                const candidate = normalizeText(button.getAttribute('data-quick-query') || '');
+                button.classList.toggle('is-active', candidate === normalizedQuery);
+            });
+        }
+
+        function updateObjectInsights(list, query) {
+            const normalizedQuery = String(query || '').trim();
+            const activeCount = list.filter(function (item) {
+                const raw = String(item.availability || item.status || '').toLowerCase();
+                return raw === 'disponible' || raw === 'active';
+            }).length;
+            const inactiveCount = Math.max(list.length - activeCount, 0);
+            const uniqueRooms = new Set(
+                list.map(function (item) { return extractRoomLabel(item); }).filter(Boolean)
+            );
+
+            if (objMetricTotal) objMetricTotal.textContent = String(list.length);
+            if (objMetricActive) objMetricActive.textContent = String(activeCount);
+            if (objMetricInactive) objMetricInactive.textContent = String(inactiveCount);
+            if (objMetricLocations) objMetricLocations.textContent = String(uniqueRooms.size);
+
+            if (objMetricTotalNote) {
+                objMetricTotalNote.textContent = normalizedQuery
+                    ? `Résultats visibles pour la recherche "${normalizedQuery}".`
+                    : 'Inventaire visible à l’écran.';
+            }
+            if (objResultHint) {
+                objResultHint.textContent = normalizedQuery
+                    ? `${list.length} résultat(s) trouvés pour "${normalizedQuery}".`
+                    : `${list.length} objet(s) chargés dans le catalogue.`;
+            }
+
+            setActiveFilterChip(normalizedQuery);
+        }
+
+        // --- LOGIQUE EXISTANTE DES OBJETS ---
+        async function fetchObjets(query = "") {
+            try {
+                const response = await fetch(`${apiBase}/things/search`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ search_query: query })
+                });
+                const items = await response.json();
+                const list = Array.isArray(items) ? items : [];
+
+                Object.keys(objectCacheById).forEach(function (key) { delete objectCacheById[key]; });
+                syncQuickFilters(list, query);
+                updateObjectInsights(list, query);
+
+                if (!list.length) {
+                    objGrid.innerHTML = `
+                        <div class="col-span-full rounded-[28px] border border-dashed border-slate-300 bg-white/70 p-10 text-center shadow-sm">
+                            <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+                                <i class="fas fa-cube text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-black text-slate-800">Aucun objet trouvé</h3>
+                            <p class="mx-auto mt-2 max-w-xl text-sm text-slate-600">Essayez un autre mot-clé, ou créez un nouvel objet pour enrichir l’inventaire.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                objGrid.innerHTML = list.map(function (item) {
+                    const itemId = String(item.id || '').trim();
+                    if (itemId) objectCacheById[itemId] = item;
+                    const objectType = String(item.type || item['@type'] || 'Objet Inconnu');
+                    const availability = (item.availability || item.status || '').toString().toLowerCase();
+                    const isAvailable = availability === 'disponible' || availability === 'active';
+                    const roomLabel = extractRoomLabel(item) || 'N/A';
+
+                    return `
+                        <div class="object-card bg-white/90 p-5 rounded-2xl border border-gray-200 hover:shadow-xl transition" role="button" tabindex="0" data-id="${escapeHtml(itemId)}">
+                            <div class="flex items-start justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-700">
+                                        <i class="fas fa-cube text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-gray-800">${escapeHtml(item.name || 'Sans nom')}</h3>
+                                        <p class="text-xs text-gray-500">${escapeHtml(objectType)}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase ${isAvailable ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">
+                                        ● ${escapeHtml(item.availability || item.status || 'Inconnu')}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center gap-2 text-xs text-gray-600">
+                                <i class="fas fa-map-marker-alt text-gray-400"></i>
+                                <span>${escapeHtml(roomLabel)}</span>
+                            </div>
+                            <div class="mt-4 flex items-center gap-2">
+                                <button onclick="openEditObjet('${escapeHtml(item.id || '')}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition">
+                                    Modifier
+                                </button>
+                                <button onclick="deleteObjet('${escapeHtml(item.id || '')}')" class="bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-red-700 transition">
+                                    Supprimer
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) { 
+                console.error("Erreur backend:", error); 
+                updateObjectInsights([], query);
+                if (objResultHint) {
+                    objResultHint.textContent = 'Impossible de charger le catalogue pour le moment.';
+                }
+                objGrid.innerHTML = '<div class="col-span-full text-center text-red-600 py-10">Erreur de chargement des objets.</div>';
+            }
+        }
+
+        async function deleteObjet(id) {
+            if (!id) return;
+            const confirmed = await window.appUiConfirm('Supprimer cet objet ?');
+            if (!confirmed) return;
+            const token = localStorage.getItem('userToken');
+            try {
+                const response = await fetch(`${apiBase}/things/${encodeURIComponent(id)}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    alert(data.detail || 'Suppression impossible');
+                    return;
+                }
+                fetchObjets(document.getElementById('objSearch').value || '');
+            } catch (error) {
+                console.error('Erreur delete:', error);
+                alert('Erreur lors de la suppression');
+            }
+        }
+
+        function openEditObjet(id) {
+            const cleanId = String(id || '').trim();
+            if (!cleanId) return;
+
+            const source = objectCacheById[cleanId] || {};
+            const details = {
+                name: source.name || '',
+                type: source.type || source['@type'] || '',
+                location: (source.location && source.location.room) || source.location || '',
+                status: source.status || source.availability || 'active',
+                description: source.description || '',
+                endpoint_url: (source.control && source.control.endpoint) || ''
+            };
+
+            editingThingId = cleanId;
+            openOverlay('Modification objet', buildEditOverlayHtml(details));
+
+            // Pré-sélectionner la localisation dans le dropdown
+            setTimeout(() => {
+                const editLocationSelect = document.getElementById('editLocation');
+                if (editLocationSelect && details.location) {
+                    editLocationSelect.value = details.location;
+                }
+            }, 50);
+
+            const form = document.getElementById('editThingForm');
+            if (!form) return;
+            form.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                const newName = document.getElementById('editName').value;
+                const newType = document.getElementById('editType').value;
+                const newLocation = document.getElementById('editLocation').value;
+                const newStatus = document.getElementById('editStatus').value;
+                const newDescription = document.getElementById('editDescription').value;
+                const newEndpoint = document.getElementById('editEndpoint').value;
+                await updateObjet(editingThingId, newName, newType, newLocation, newStatus, newDescription, newEndpoint);
+            });
+        }
+
+        async function updateObjet(id, name, type, location, status, description, endpointUrl) {
+            const token = localStorage.getItem('userToken');
+            if (!token) {
+                alert('Token manquant');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${apiBase}/things/${encodeURIComponent(id)}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        name: String(name || '').trim(),
+                        type: String(type || '').trim(),
+                        location: String(location || '').trim(),
+                        description: String(description || '').trim(),
+                        status: String(status || '').trim() || 'active',
+                        endpoint_url: String(endpointUrl || '').trim()
+                    })
+                });
+
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    alert(data.detail || 'Erreur lors de la modification');
+                    return;
+                }
+
+                alert(data.message || 'Objet modifie avec succes');
+                closeOverlay();
+                fetchObjets(document.getElementById('objSearch').value || '');
+            } catch (error) {
+                console.error('Erreur update:', error);
+                alert('Erreur reseau');
+            }
+        }
+
+        // --- ÉCOUTEURS D'ÉVÉNEMENTS ---
+        objSearch.addEventListener('input', (e) => fetchObjets(e.target.value));
+        openHistoryOverlay.addEventListener('click', async (e) => {
+            e.preventDefault();
+            openOverlay('Historique admin', '<div class="p-2">Chargement...</div>');
+            try {
+                const history = await fetchAdminHistory();
+                overlayBody.innerHTML = buildHistoryOverlayHtml(history);
+            } catch (error) {
+                console.error('Erreur historique admin:', error);
+                overlayBody.innerHTML = '<div class="p-2 text-red-600">Impossible de charger l\'historique admin.</div>';
+            }
+        });
+        openRoleOverlay.addEventListener('click', (e) => {
+            e.preventDefault();
+            openOverlay('Role admin', buildRoleOverlayHtml());
+        });
+        overlayBackdrop.addEventListener('click', closeOverlay);
+        overlayClose.addEventListener('click', closeOverlay);
+        if (showAllObjectsBtn) {
+            showAllObjectsBtn.addEventListener('click', function () {
+                objSearch.value = '';
+                fetchObjets('');
+            });
+        }
+        if (objQuickFilters) {
+            objQuickFilters.addEventListener('click', function (event) {
+                const button = event.target.closest('[data-quick-query]');
+                if (!button) return;
+                const query = String(button.getAttribute('data-quick-query') || '').trim();
+                objSearch.value = query;
+                fetchObjets(query);
+            });
+        }
+
+        objGrid.addEventListener('click', function (event) {
+            const card = event.target.closest('.object-card');
+            if (!card || event.target.closest('button')) return;
+
+            const itemId = String(card.dataset.id || '').trim();
+            const source = itemId ? objectCacheById[itemId] : null;
+            if (!source) return;
+
+            const details = {
+                name: source.name || 'Sans nom',
+                type: source.type || source['@type'] || 'Objet Inconnu',
+                location: (source.location && source.location.room) || source.location || 'N/A',
+                status: source.status || source.availability || 'inconnu',
+                description: source.description || ''
+            };
+            openOverlay('Detail de l\'objet', buildDetailOverlayHtml(details));
+        });
+
+        objGrid.addEventListener('keydown', function (event) {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            const card = event.target.closest('.object-card');
+            if (!card) return;
+            event.preventDefault();
+
+            const itemId = String(card.dataset.id || '').trim();
+            const source = itemId ? objectCacheById[itemId] : null;
+            if (!source) return;
+
+            const details = {
+                name: source.name || 'Sans nom',
+                type: source.type || source['@type'] || 'Objet Inconnu',
+                location: (source.location && source.location.room) || source.location || 'N/A',
+                status: source.status || source.availability || 'inconnu',
+                description: source.description || ''
+            };
+            openOverlay('Detail de l\'objet', buildDetailOverlayHtml(details));
+        });
+
+        window.openEditObjet = openEditObjet;
+
+        window.onload = () => fetchObjets("");
+    </script>
+</body>
+</html>
+
