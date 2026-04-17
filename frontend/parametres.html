@@ -77,8 +77,8 @@
     .sidebar nav {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      margin-top: 16px;
+      gap: 0;
+      margin-top: 40px;
     }
 
     .sidebar nav a {
@@ -92,7 +92,6 @@
       border-radius: 10px;
       transition: background 0.25s ease, color 0.25s ease;
       cursor: pointer;
-      font-size: 14px;
       font-weight: 600;
     }
 
@@ -282,10 +281,10 @@
       <a href="objets.html"><i class="fas fa-cube"></i> Objets</a>
       <a href="localisations.html"><i class="fas fa-map-marker-alt"></i> Localisations</a>
       <a href="#" id="openHistoryOverlay"><i class="fas fa-clock-rotate-left"></i> Historique</a>
-      <a href="#" id="openRoleOverlay"><i class="fas fa-user-shield"></i> Role</a>
+      <a href="#" id="openAdminReportsOverlay"><i class="fas fa-flag"></i> Signalements</a>
       <a href="notifications-admin.html"><i class="fas fa-bell"></i> <span data-key="nav_notifications">Notifications</span></a>
       <a href="documatation.html"><i class="fas fa-book-open"></i> <span data-key="nav_documentation">Documentation</span></a>
-      <a href="parametres.html" class="nav-active mt-auto"><i class="fas fa-cog"></i> Parametres admin</a>
+      <a href="parametres.html" class="nav-active mt-auto"><i class="fas fa-cog"></i> Parametres</a>
     </nav>
   </aside>
 
@@ -494,7 +493,6 @@
     const sessionHeroRole = document.getElementById("sessionHeroRole");
     const editAdminOverlay = document.getElementById("editAdminOverlay");
     const openHistoryOverlay = document.getElementById("openHistoryOverlay");
-    const openRoleOverlay = document.getElementById("openRoleOverlay");
     const infoOverlay = document.getElementById("infoOverlay");
     const overlayBackdrop = document.getElementById("overlayBackdrop");
     const overlayClose = document.getElementById("overlayClose");
@@ -876,12 +874,6 @@
         openHistoryOverlayView();
       });
     }
-    if (openRoleOverlay) {
-      openRoleOverlay.addEventListener("click", function (event) {
-        event.preventDefault();
-        openOverlay("Role", buildRoleOverlayHtml());
-      });
-    }
     if (overlayBackdrop) overlayBackdrop.addEventListener("click", closeOverlay);
     if (overlayClose) overlayClose.addEventListener("click", closeOverlay);
 
@@ -929,5 +921,6 @@
     window.changeUserRole = changeUserRole;
     window.deleteUser = deleteUser;
   </script>
+  <script src="admin-reports.js"></script>
 </body>
 </html>

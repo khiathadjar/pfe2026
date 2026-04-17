@@ -451,7 +451,6 @@ tbody tr:hover { background: rgba(16, 185, 129, 0.1); }
         <a href="#" id="openFavoritesOverlay"><i class="fas fa-heart"></i><span>Favoris</span></a>
         <a href="#" id="openReportsOverlay"><i class="fas fa-flag"></i><span>Signaler un problème</span></a>
         <a href="documatation.html"><i class="fas fa-book-open"></i><span data-key="nav_documentation">Documentation</span></a>
-        <a href="#" id="openRoleOverlay"><i class="fas fa-user-shield"></i><span data-key="nav_role">Role</span></a>
         <a href="#" id="openHistoryOverlay"><i class="fas fa-clock-rotate-left"></i><span data-key="nav_history">Historique</span></a>
         <a href="parametres-user.html"><i class="fas fa-cog"></i><span data-key="nav_settings">Parametres</span></a>
       </nav>
@@ -541,7 +540,6 @@ const objectsBody = document.getElementById("objectsBody");
 const mainSearch = document.getElementById("mainSearch");
 const objectsSection = document.getElementById("objectsSection");
 const openHistoryOverlay = document.getElementById("openHistoryOverlay");
-const openRoleOverlay = document.getElementById("openRoleOverlay");
 const openFavoritesOverlay = document.getElementById("openFavoritesOverlay");
 const openReportsOverlay = document.getElementById("openReportsOverlay");
 const infoOverlay = document.getElementById("infoOverlay");
@@ -1168,28 +1166,9 @@ function openObjectDecision(row) {
   const alreadyTaken = (userProfileData?.things_in_use || []).some(t => String(t.id || t._id) === String(objId));
   const takenByAnother = selectedObjectDetails.statusCode === "in_use" && !alreadyTaken;
   
-  const isAvailable = selectedObjectDetails.statusCode === "active" && !alreadyTaken && !takenByAnother;
-  let actionTitle;
-  let actionCopy;
-  let statusClass;
-  
-  if (alreadyTaken) {
-    actionTitle = "Cet objet est en votre utilisation.";
-    actionCopy = "Vous avez actuellement cet objet. Rendez-vous au point de restitution quand vous avez terminé.";
-    statusClass = "active";
-  } else if (takenByAnother) {
-    actionTitle = "Cet objet est déjà pris.";
-    actionCopy = "Cet objet est actuellement en utilisation. Vous ne pouvez pas le prendre pour le moment.";
-    statusClass = "inactive";
-  } else if (isAvailable) {
-    actionTitle = "Voulez-vous prendre cet objet ?";
-    actionCopy = "Consultez ses détails puis confirmez si vous souhaitez l'emprunter maintenant.";
-    statusClass = "active";
-  } else {
-    actionTitle = "Cet objet n'est pas disponible pour la prise pour le moment.";
-    actionCopy = "Vous pouvez consulter sa fiche complète, mais la prise est momentanément désactivée.";
-    statusClass = "inactive";
-  }
+  const actionTitle = "Vérifiez d'abord le statut de l'objet.";
+  const actionCopy = "Cliquez sur Vérifier statut. Si l'objet est disponible, vous pourrez ensuite le prendre.";
+  const statusClass = "inactive";
   
   const proximityNote = selectedObjectDetails.sameRoom
     ? "Objet disponible dans votre salle actuelle."
@@ -1197,13 +1176,7 @@ function openObjectDecision(row) {
   
   const safeName = sanitizeText(selectedObjectDetails.name || "Objet").replace(/'/g, "&apos;");
   const isFavorite = userFavorites.some((f) => String(f.id) === String(objId));
-  const takeButtonHtml = isAvailable
-    ? `<button type="button" onclick="confirmTakeSelectedObject()" class="object-action-btn primary" style="background: linear-gradient(135deg, #0f766e, #0ea5a4);"><i class="fas fa-hand-holding" style="margin-right: 6px;"></i>Je prends</button>`
-    : (alreadyTaken
-      ? `<button type="button" disabled class="object-action-btn primary" style="background: #cbd5e1; color: #64748b; cursor: not-allowed;"><i class="fas fa-check" style="margin-right: 6px;"></i>Déjà pris (vous)</button>`
-      : (takenByAnother
-        ? `<button type="button" disabled class="object-action-btn primary" style="background: #cbd5e1; color: #64748b; cursor: not-allowed;"><i class="fas fa-user-clock" style="margin-right: 6px;"></i>En utilisation</button>`
-        : `<button type="button" disabled class="object-action-btn primary" style="background: #cbd5e1; color: #64748b; cursor: not-allowed;"><i class="fas fa-ban" style="margin-right: 6px;"></i>Indisponible</button>`));
+  const safeStatusCode = String(selectedObjectDetails.statusCode || "inactive").replace(/"/g, "&quot;");
 
   openOverlay(
     tr("detail_overlay_title", "Detail de l'objet"),
@@ -1215,7 +1188,7 @@ function openObjectDecision(row) {
             <h4 class="object-sheet-title">${sanitizeText(selectedObjectDetails.name || "Objet")}</h4>
             <p class="object-sheet-sub">${sanitizeText(proximityNote)}</p>
           </div>
-          <span class="object-status-pill ${statusClass}">${sanitizeText(selectedObjectDetails.statusText || "-")}</span>
+          <span id="overlayStatusPill" class="object-status-pill ${statusClass}">À vérifier</span>
         </div>
 
         <div class="object-detail-grid">
@@ -1243,10 +1216,11 @@ function openObjectDecision(row) {
         </div>
 
         <div class="object-action-box">
-          <strong>${actionTitle}</strong>
-          <p>${actionCopy}</p>
+           <strong id="overlayActionTitle">${actionTitle}</strong>
+           <p id="overlayActionCopy">${actionCopy}</p>
           <div class="object-action-row">
-             ${takeButtonHtml}
+             <button id="overlayVerifyBtn" type="button" onclick="verifyObjectInOverlay('${safeObjectId}', '${safeName}', '${safeStatusCode}', '${alreadyTaken ? "1" : "0"}', '${takenByAnother ? "1" : "0"}')" class="object-action-btn light" style="border: 1px solid #cbd5e1;"><i class="fas fa-search" style="margin-right: 6px;"></i>Vérifier statut</button>
+             <button id="overlayTakeBtn" type="button" disabled class="object-action-btn primary" style="background: #cbd5e1; color: #64748b; cursor: not-allowed;"><i class="fas fa-hand-holding" style="margin-right: 6px;"></i>Vérifier d'abord</button>
              <button type="button" onclick="addToFav('${safeObjectId}', '${safeName}')" class="object-action-btn light" style="border: 1px solid #cbd5e1;"><i class="fas fa-heart" style="margin-right: 6px; ${isFavorite ? 'color: #dc2626;' : ''}"></i>${isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}</button>
              <button type="button" onclick="openReportProblemModal('${safeObjectId}', '${safeName}')" class="object-action-btn light" style="border: 1px solid #cbd5e1;"><i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i>Signaler un problème</button>
              <button type="button" onclick="closeOverlay()" class="object-action-btn light">Fermer</button>
@@ -1255,6 +1229,71 @@ function openObjectDecision(row) {
       </div>
     `
   );
+}
+
+function verifyObjectInOverlay(objId, objName, statusCode, alreadyTakenFlag, takenByAnotherFlag) {
+  const alreadyTaken = String(alreadyTakenFlag || "0") === "1";
+  const takenByAnother = String(takenByAnotherFlag || "0") === "1";
+  const isAvailable = statusCode === "active" && !alreadyTaken && !takenByAnother;
+
+  const titleEl = document.getElementById("overlayActionTitle");
+  const copyEl = document.getElementById("overlayActionCopy");
+  const takeBtn = document.getElementById("overlayTakeBtn");
+  const statusPill = document.getElementById("overlayStatusPill");
+
+  checkAvailability(objId, decodeHtmlEntities(objName) || "Objet", statusCode);
+
+  if (!takeBtn || !titleEl || !copyEl || !statusPill) return;
+
+  if (alreadyTaken) {
+    statusPill.className = "object-status-pill active";
+    statusPill.textContent = "Déjà pris (vous)";
+    titleEl.textContent = "Cet objet est en votre utilisation.";
+    copyEl.textContent = "Vous avez actuellement cet objet. Rendez-vous au point de restitution quand vous avez terminé.";
+    takeBtn.disabled = true;
+    takeBtn.style.background = "#cbd5e1";
+    takeBtn.style.color = "#64748b";
+    takeBtn.style.cursor = "not-allowed";
+    takeBtn.innerHTML = '<i class="fas fa-check" style="margin-right: 6px;"></i>Déjà pris (vous)';
+    return;
+  }
+
+  if (takenByAnother || statusCode === "in_use") {
+    statusPill.className = "object-status-pill inactive";
+    statusPill.textContent = "En utilisation";
+    titleEl.textContent = "Cet objet est déjà pris.";
+    copyEl.textContent = "Cet objet est actuellement en utilisation. Vous ne pouvez pas le prendre pour le moment.";
+    takeBtn.disabled = true;
+    takeBtn.style.background = "#cbd5e1";
+    takeBtn.style.color = "#64748b";
+    takeBtn.style.cursor = "not-allowed";
+    takeBtn.innerHTML = '<i class="fas fa-user-clock" style="margin-right: 6px;"></i>En utilisation';
+    return;
+  }
+
+  if (isAvailable) {
+    statusPill.className = "object-status-pill active";
+    statusPill.textContent = "Disponible";
+    titleEl.textContent = "Voulez-vous prendre cet objet ?";
+    copyEl.textContent = "Statut vérifié: disponible. Vous pouvez maintenant prendre l'objet.";
+    takeBtn.disabled = false;
+    takeBtn.style.background = "linear-gradient(135deg, #0f766e, #0ea5a4)";
+    takeBtn.style.color = "#ffffff";
+    takeBtn.style.cursor = "pointer";
+    takeBtn.innerHTML = '<i class="fas fa-hand-holding" style="margin-right: 6px;"></i>Je prends';
+    takeBtn.onclick = function () { confirmTakeSelectedObject(); };
+    return;
+  }
+
+  statusPill.className = "object-status-pill inactive";
+  statusPill.textContent = "Indisponible";
+  titleEl.textContent = "Cet objet n'est pas disponible pour la prise pour le moment.";
+  copyEl.textContent = "Statut vérifié: non disponible. Vous ne pouvez pas le prendre actuellement.";
+  takeBtn.disabled = true;
+  takeBtn.style.background = "#cbd5e1";
+  takeBtn.style.color = "#64748b";
+  takeBtn.style.cursor = "not-allowed";
+  takeBtn.innerHTML = '<i class="fas fa-ban" style="margin-right: 6px;"></i>Indisponible';
 }
 
 async function confirmTakeSelectedObject() {
@@ -1542,10 +1581,6 @@ openHistoryOverlay.addEventListener("click", async (event) => {
   event.preventDefault();
   await loadUserHistory();
   openOverlay("Historique utilisateur", buildHistoryOverlayHtml());
-});
-openRoleOverlay.addEventListener("click", (event) => {
-  event.preventDefault();
-  openOverlay("Role utilisateur", "<p>Role: User</p>");
 });
 openFavoritesOverlay.addEventListener("click", (event) => {
   event.preventDefault();

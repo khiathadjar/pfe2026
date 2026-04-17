@@ -376,7 +376,7 @@
       <a href="objets.html"><i class="fas fa-cube"></i><span data-key="nav_objects">Objets</span></a>
       <a href="localisations.html"><i class="fas fa-map-marker-alt"></i><span data-key="nav_locations">Localisations</span></a>
       <a href="#" id="openHistoryOverlay"><i class="fas fa-clock-rotate-left"></i><span data-key="nav_history">Historique</span></a>
-      <a href="#" id="openRoleOverlay"><i class="fas fa-user-shield"></i><span data-key="nav_role">Role</span></a>
+      <a href="#" id="openAdminReportsOverlay"><i class="fas fa-flag"></i><span>Signalements</span></a>
       <a href="notifications-admin.html" class="active"><i class="fas fa-bell"></i><span data-key="nav_notifications">Notifications</span></a>
       <a href="documatation.html"><i class="fas fa-book-open"></i><span data-key="nav_documentation">Documentation</span></a>
       <a href="parametres.html" class="settings-link"><i class="fas fa-cog"></i><span data-key="nav_settings">Paramètres</span></a>
@@ -432,7 +432,6 @@
     const refreshBtn = document.getElementById("refreshBtn");
     const markAllBtn = document.getElementById("markAllBtn");
     const openHistoryOverlay = document.getElementById("openHistoryOverlay");
-    const openRoleOverlay = document.getElementById("openRoleOverlay");
     const infoOverlay = document.getElementById("infoOverlay");
     const overlayBackdrop = document.getElementById("overlayBackdrop");
     const overlayClose = document.getElementById("overlayClose");
@@ -634,10 +633,6 @@
 
     refreshBtn.addEventListener("click", loadNotifications);
     markAllBtn.addEventListener("click", markAllAsRead);
-    openRoleOverlay.addEventListener("click", function (event) {
-      event.preventDefault();
-      openOverlay(tr("nav_role", "Role"), buildRoleOverlayHtml());
-    });
     overlayBackdrop.addEventListener("click", closeOverlay);
     overlayClose.addEventListener("click", closeOverlay);
 
@@ -650,6 +645,7 @@
       adminNotificationsReady = true;
     });
   </script>
+  <script src="admin-reports.js"></script>
 </body>
 </html>
 

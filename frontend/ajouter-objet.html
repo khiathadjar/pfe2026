@@ -273,8 +273,8 @@
             <a href="#" id="openHistoryOverlay" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
                 <i class="fas fa-clock-rotate-left"></i> <span data-key="nav_history">Historique</span>
             </a>
-            <a href="#" id="openRoleOverlay" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
-                <i class="fas fa-user-shield"></i> <span data-key="nav_role">Role</span>
+            <a href="#" id="openAdminReportsOverlay" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
+                <i class="fas fa-flag"></i> <span>Signalements</span>
             </a>
             <a href="notifications-admin.html" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
                 <i class="fas fa-bell"></i> <span data-key="nav_notifications">Notifications</span>
@@ -559,7 +559,6 @@
         if (!token) window.location.href = "login.html";
 
         const openHistoryOverlay = document.getElementById('openHistoryOverlay');
-        const openRoleOverlay = document.getElementById('openRoleOverlay');
         const infoOverlay = document.getElementById('infoOverlay');
         const overlayBackdrop = document.getElementById('overlayBackdrop');
         const overlayClose = document.getElementById('overlayClose');
@@ -1106,7 +1105,6 @@
                 overlayBody.innerHTML = '<div class="glass-main p-6 rounded-3xl shadow-2xl text-red-600">Impossible de charger l\'historique admin.</div>';
             }
         });
-        openRoleOverlay.addEventListener('click', (e) => { e.preventDefault(); openOverlay('Role admin', buildRoleOverlayHtml()); });
         overlayBackdrop.addEventListener('click', closeOverlay);
         overlayClose.addEventListener('click', closeOverlay);
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeOverlay(); });
@@ -1159,5 +1157,6 @@
             updatePreview();
         })();
     </script>
+    <script src="admin-reports.js"></script>
 </body>
 </html>

@@ -99,6 +99,49 @@
         }
         .role-item h4 { margin: 0 0 6px; font-size: 14px; color: #0f172a; }
         .role-item p { margin: 0; font-size: 13px; color: #334155; }
+        .admin-topbar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .profile { position: relative; }
+        .avatar {
+            width: 46px;
+            height: 46px;
+            background: #047857;
+            color: #ffffff;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            border: none;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 16px;
+        }
+        .dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 56px;
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            border-radius: 14px;
+            padding: 12px;
+            min-width: 210px;
+            box-shadow: 0 16px 30px rgba(2, 6, 23, 0.2);
+            z-index: 1300;
+        }
+        .dropdown.open { display: block; }
+        .dropdown a {
+            display: block;
+            text-decoration: none;
+            color: #0f172a;
+            padding: 9px 10px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        .dropdown a:hover { background: #ecfdf5; }
     </style>
   <link rel="stylesheet" href="theme.css">
   <script data-theme-role-script>
@@ -153,8 +196,8 @@
             <a href="#" id="openHistoryOverlay" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
                 <i class="fas fa-clock-rotate-left"></i> <span data-key="nav_history">Historique</span>
             </a>
-            <a href="#" id="openRoleOverlay" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
-                <i class="fas fa-user-shield"></i> <span data-key="nav_role">Role</span>
+            <a href="#" id="openAdminReportsOverlay" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
+                <i class="fas fa-flag"></i> <span>Signalements</span>
             </a>
             <a href="notifications-admin.html" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
                 <i class="fas fa-bell"></i> <span data-key="nav_notifications">Notifications</span>
@@ -169,6 +212,18 @@
     </aside>
 
     <main class="flex-1 p-8">
+        <div class="admin-topbar">
+            <div class="profile">
+                <button class="avatar" id="profileButton" type="button" aria-haspopup="menu" aria-controls="menu" aria-expanded="false">A</button>
+                <div class="dropdown" id="menu" role="menu" aria-labelledby="profileButton">
+                    <strong id="menuName">Admin</strong>
+                    <hr>
+                    <a href="#" role="menuitem" id="openProfileOverlay">Mon profil</a>
+                    <a href="#" role="menuitem" id="logoutLink">Deconnexion</a>
+                </div>
+            </div>
+        </div>
+
         <section class="dashboard-hero glass-main">
             <div class="hero-copy">
                 <span class="hero-kicker">Pilotage admin</span>
@@ -194,7 +249,6 @@
             <div class="relative w-full md:w-1/2 md:ml-auto">
                 <input type="text" id="mainSearch" placeholder="Rechercher un objet..." data-key="search_objects" data-attr="placeholder"
                        class="w-full p-2 pl-10 rounded-xl border-none shadow-sm bg-white/90 outline-none focus:ring-2 focus:ring-emerald-600">
-                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
             </div>
         </div>
 
@@ -259,7 +313,6 @@
             <table class="w-full text-left">
                 <thead class="text-gray-600 border-b border-gray-300">
                     <tr class="text-[11px] uppercase font-bold tracking-wider">
-                        <th class="p-3 w-10"></th>
                         <th class="p-3" data-key="table_name">Nom</th>
                         <th class="p-3" data-key="table_type">Type</th>
                         <th class="p-3" data-key="table_location">Localisation</th>
@@ -301,7 +354,11 @@
         const apiBase = (window.APP_CONFIG && window.APP_CONFIG.API_BASE) || 'https://pfetest-api.onrender.com';
         const adminHistoryKey = 'adminHistory';
         const openHistoryOverlay = document.getElementById('openHistoryOverlay');
-        const openRoleOverlay = document.getElementById('openRoleOverlay');
+        const profileButton = document.getElementById('profileButton');
+        const menu = document.getElementById('menu');
+        const menuName = document.getElementById('menuName');
+        const openProfileOverlay = document.getElementById('openProfileOverlay');
+        const logoutLink = document.getElementById('logoutLink');
         const infoOverlay = document.getElementById('infoOverlay');
         const overlayBackdrop = document.getElementById('overlayBackdrop');
         const overlayClose = document.getElementById('overlayClose');
@@ -311,6 +368,7 @@
         const positionDebugText = document.getElementById('positionDebugText');
         let editingThingId = '';
         let objectCacheById = {};
+        let adminProfileData = null;
 
         function authHeaders() {
             const token = localStorage.getItem('userToken') || '';
@@ -357,10 +415,82 @@
             overlayClose.focus();
         }
 
+        function toggleMenu() {
+            const isOpen = menu.classList.toggle('open');
+            profileButton.setAttribute('aria-expanded', String(isOpen));
+        }
+
+        function closeMenu() {
+            menu.classList.remove('open');
+            profileButton.setAttribute('aria-expanded', 'false');
+        }
+
+        function escapeHtml(value) {
+            return String(value || '').replace(/[&<>"']/g, function (ch) {
+                if (ch === '&') return '&amp;';
+                if (ch === '<') return '&lt;';
+                if (ch === '>') return '&gt;';
+                if (ch === '"') return '&quot;';
+                return '&#39;';
+            });
+        }
+
+        function applyAdminDisplayName(displayName) {
+            const safe = String(displayName || '').trim();
+            if (!safe) return;
+            menuName.textContent = safe;
+            profileButton.textContent = (safe[0] || 'A').toUpperCase();
+        }
+
         function closeOverlay() {
             infoOverlay.hidden = true;
             infoOverlay.setAttribute('aria-hidden', 'true');
             document.body.style.overflow = '';
+        }
+
+        async function loadAdminProfile() {
+            try {
+                const response = await fetch(`${apiBase}/user/profile`, { method: 'GET', headers: authHeaders() });
+                if (!response.ok) return;
+                const profile = await response.json();
+                adminProfileData = profile;
+
+                const role = String(profile.role || '').toLowerCase();
+                if (role && role !== 'admin') {
+                    window.location.href = 'user.html';
+                    return;
+                }
+
+                const email = String(profile.email || localStorage.getItem('userEmail') || 'admin@intellibuild.com');
+                const storedName = String(localStorage.getItem('adminDisplayName') || '').trim();
+                const fallbackName = email.split('@')[0] || 'Admin';
+                const displayName = storedName || String(profile.display_name || '').trim() || fallbackName;
+                localStorage.setItem('userRole', 'admin');
+                localStorage.setItem('userEmail', email);
+                localStorage.setItem('adminDisplayName', displayName);
+                applyAdminDisplayName(displayName);
+            } catch (error) {
+                console.error('Erreur profil admin:', error);
+            }
+        }
+
+        function buildAdminProfileOverlayHtml(profile) {
+            const email = String((profile && profile.email) || localStorage.getItem('userEmail') || 'admin@intellibuild.com');
+            const displayName = String(localStorage.getItem('adminDisplayName') || menuName.textContent || 'Admin');
+            const role = String((profile && profile.role) || 'admin');
+            const currentRoom = String(localStorage.getItem('user_room') || 'Non definie');
+
+            return `
+                <div class="glass-main p-6 rounded-3xl shadow-2xl">
+                    <h3 class="text-xl font-bold mb-4">Mon profil</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div class="bg-white/90 rounded-xl p-4 border border-slate-200"><p class="text-slate-500 font-semibold">Nom</p><p class="font-bold text-slate-800 mt-1">${escapeHtml(displayName)}</p></div>
+                        <div class="bg-white/90 rounded-xl p-4 border border-slate-200"><p class="text-slate-500 font-semibold">Role</p><p class="font-bold text-slate-800 mt-1">${escapeHtml(role)}</p></div>
+                        <div class="bg-white/90 rounded-xl p-4 border border-slate-200"><p class="text-slate-500 font-semibold">Email</p><p class="font-bold text-slate-800 mt-1">${escapeHtml(email)}</p></div>
+                        <div class="bg-white/90 rounded-xl p-4 border border-slate-200"><p class="text-slate-500 font-semibold">Salle active</p><p class="font-bold text-slate-800 mt-1">${escapeHtml(currentRoom)}</p></div>
+                    </div>
+                </div>
+            `;
         }
 
         function readAdminHistory() {
@@ -539,6 +669,7 @@
         }
 
         function buildDetailOverlayHtml(details) {
+            const rawStatus = String(details.status || '').replace(/'/g, "\\'");
             return `
                 <div class="glass-main p-6 rounded-3xl shadow-2xl">
                     <h3 class="text-xl font-bold mb-4">${tr('detail_overlay_title', "Detail de l'objet")}</h3>
@@ -546,11 +677,34 @@
                         <div class="bg-white/90 rounded-xl p-4 border border-slate-200"><p class="text-slate-500 font-semibold">${tr('detail_name', 'Nom')}</p><p class="font-bold text-slate-800 mt-1">${details.name || '-'}</p></div>
                         <div class="bg-white/90 rounded-xl p-4 border border-slate-200"><p class="text-slate-500 font-semibold">${tr('detail_type', 'Type')}</p><p class="font-bold text-slate-800 mt-1">${details.type || '-'}</p></div>
                         <div class="bg-white/90 rounded-xl p-4 border border-slate-200"><p class="text-slate-500 font-semibold">${tr('detail_location', 'Localisation')}</p><p class="font-bold text-slate-800 mt-1">${details.location || '-'}</p></div>
-                        <div class="bg-white/90 rounded-xl p-4 border border-slate-200"><p class="text-slate-500 font-semibold">${tr('detail_status', 'Statut')}</p><p class="font-bold text-slate-800 mt-1">${details.status || '-'}</p></div>
+                        <div class="bg-white/90 rounded-xl p-4 border border-slate-200">
+                            <p class="text-slate-500 font-semibold">${tr('detail_status', 'Statut')}</p>
+                            <div class="flex items-center gap-2 mt-2">
+                                <button id="detailStatusBadge" type="button" onclick="verifyObjectStatus('detailStatusBadge', '${rawStatus}')" class="px-3 py-1 rounded-lg bg-emerald-700 text-white text-xs font-semibold hover:bg-emerald-800">Verifier</button>
+                            </div>
+                        </div>
                         <div class="md:col-span-2 bg-white/90 rounded-xl p-4 border border-slate-200"><p class="text-slate-500 font-semibold">Description</p><p class="font-bold text-slate-800 mt-1">${details.description || '-'}</p></div>
                     </div>
                 </div>
             `;
+        }
+
+        function verifyObjectStatus(statusElementId, rawStatus) {
+            const statusEl = document.getElementById(statusElementId);
+            if (!statusEl) return;
+
+            const status = String(rawStatus || '').toLowerCase();
+            const isAvailable = ['active', 'actif', 'disponible'].includes(status);
+
+            if (isAvailable) {
+                statusEl.textContent = 'Disponible';
+                statusEl.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800';
+            } else {
+                statusEl.textContent = 'Indisponible';
+                statusEl.className = 'px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700';
+            }
+
+            statusEl.removeAttribute('onclick');
         }
 
         function buildEditOverlayHtml(details) {
@@ -741,13 +895,15 @@
                     .replace(/[\u0300-\u036f]/g, '')
                     .trim();
 
-                tbody.innerHTML = items.map(item => {
+                tbody.innerHTML = items.map((item, index) => {
                     const itemId = String(item.id || '').trim();
                     if (itemId) objectCacheById[itemId] = item;
                     const objectType = item.type || item["@type"] || "Objet Inconnu";
                     const itemName = item.name || 'Sans nom';
                     const itemLocation = item.location?.room || item.location || 'N/A';
                     const itemStatus = item.status || 'inconnu';
+                    const safeRawStatus = String(itemStatus).replace(/'/g, "\\'");
+                    const statusChipId = `status-chip-${String(itemId || index).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
                     const ux = Number(localStorage.getItem('user_x') || 0);
                     const uy = Number(localStorage.getItem('user_y') || 0);
                     const uz = Number(localStorage.getItem('user_z') || 0);
@@ -773,15 +929,12 @@
                         data-location="${String(itemLocation).replace(/"/g, '&quot;')}"
                         data-status="${String(itemStatus).replace(/"/g, '&quot;')}"
                         data-description="${String(item.description || '').replace(/"/g, '&quot;')}">
-                        <td class="p-3"><input type="checkbox" class="rounded"></td>
-                        <td class="p-3 flex items-center gap-3 font-medium"><i class="fas fa-cube text-emerald-600"></i> ${itemName}</td>
+                        <td class="p-3 font-medium">${itemName}</td>
                         <td class="p-3 text-sm">${objectType}</td>
                         <td class="p-3 text-sm">${itemLocation}</td>
                         <td class="p-3 text-sm font-semibold ${sameRoom ? 'text-emerald-700' : 'text-slate-700'}">${distanceText}</td>
                         <td class="p-3">
-                            <span class="px-4 py-1 rounded-full text-xs font-bold ${item.status === 'active' || item.status === 'Disponible' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-700'}">
-                                ● ${itemStatus}
-                            </span>
+                            <button id="${statusChipId}" type="button" onclick="verifyObjectStatus('${statusChipId}', '${safeRawStatus}')" class="px-2.5 py-1 rounded-lg bg-emerald-700 text-white text-xs font-semibold hover:bg-emerald-800">Verifier</button>
                         </td>
                         <td class="p-3 text-right flex gap-2 justify-end">
                             <button onclick="editObjet('${item.id || ''}', '${String(itemName).replace(/'/g, "\\'")}', '${String(objectType).replace(/'/g, "\\'")}', '${String(itemLocation).replace(/'/g, "\\'")}', '${String(itemStatus).replace(/'/g, "\\'")}', '${String(item.description || '').replace(/'/g, "\\'")}')" class="h-7 w-7 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50" title="Modifier">
@@ -950,22 +1103,46 @@
             openHistoryOverlayView();
         });
 
-        openRoleOverlay.addEventListener('click', function (e) {
+        profileButton.addEventListener('click', function () {
+            toggleMenu();
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!(menu.contains(event.target) || profileButton.contains(event.target))) closeMenu();
+        });
+
+        openProfileOverlay.addEventListener('click', async function (e) {
             e.preventDefault();
-            openOverlay(tr('role_overlay_title', 'Role utilisateur'), buildRoleOverlayHtml());
+            await loadAdminProfile();
+            closeMenu();
+            openOverlay('Mon profil', buildAdminProfileOverlayHtml(adminProfileData || {}));
+        });
+
+        logoutLink.addEventListener('click', function (e) {
+            e.preventDefault();
+            localStorage.removeItem('userToken');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('adminDisplayName');
+            window.location.href = 'login.html';
         });
 
         overlayBackdrop.addEventListener('click', closeOverlay);
         overlayClose.addEventListener('click', closeOverlay);
 
         document.addEventListener('keydown', function (event) {
-            if (event.key === 'Escape' && !infoOverlay.hidden) closeOverlay();
+            if (event.key === 'Escape') {
+                closeMenu();
+                if (!infoOverlay.hidden) closeOverlay();
+            }
         });
 
-        window.onload = () => {
+        window.onload = async () => {
+            await loadAdminProfile();
             refreshPositionDebugBadge();
             chargerObjets("");
         };
     </script>
+    <script src="admin-reports.js"></script>
 </body>
 </html>

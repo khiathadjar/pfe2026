@@ -68,7 +68,7 @@
         .role-item { background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 12px; padding: 12px; }
         .role-item h4 { margin: 0 0 6px; font-size: 14px; color: #0f172a; }
         .role-item p { margin: 0; font-size: 13px; color: #334155; }
-        .objects-toolbar-shell { display: grid; gap: 16px; align-items: center; }
+        .objects-toolbar-shell { display: grid; gap: 12px; align-items: center; }
         .objects-search { min-width: 0; }
         .objects-filter-row {
             display: flex;
@@ -86,7 +86,7 @@
         }
         @media (min-width: 1280px) {
             .objects-toolbar-shell {
-                grid-template-columns: minmax(300px, 360px) minmax(0, 1fr) auto;
+                grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
             }
             .objects-filter-row {
                 flex-wrap: nowrap;
@@ -157,8 +157,8 @@
             <a href="#" id="openHistoryOverlay" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
                 <i class="fas fa-clock-rotate-left"></i> <span data-key="nav_history">Historique</span>
             </a>
-            <a href="#" id="openRoleOverlay" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
-                <i class="fas fa-user-shield"></i> <span data-key="nav_role">Role</span>
+            <a href="#" id="openAdminReportsOverlay" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
+                <i class="fas fa-flag"></i> <span>Signalements</span>
             </a>
 
             <a href="notifications-admin.html" class="p-3 hover:bg-gray-800 rounded-lg flex items-center gap-3 transition">
@@ -219,13 +219,11 @@
         <div class="page-toolbar mb-8">
             <div class="objects-toolbar-shell">
                 <div class="objects-search relative">
-                    <input type="text" id="objSearch" placeholder="Rechercher un objet..." data-key="search_objects" data-attr="placeholder" class="w-full p-2 pl-10 rounded-xl border-none shadow-sm bg-white/90 focus:ring-2 focus:ring-emerald-600 outline-none">
-                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    <input type="text" id="objSearch" placeholder="Rechercher un objet..." data-key="search_objects" data-attr="placeholder" class="w-full p-2 px-3 rounded-xl border-none shadow-sm bg-white/90 focus:ring-2 focus:ring-emerald-600 outline-none">
                 </div>
                 <div id="objQuickFilters" class="objects-filter-row">
                     <button type="button" class="filter-chip is-active" data-quick-query="">Tout</button>
                 </div>
-                <p id="objResultHint" class="page-stat-note objects-toolbar-note">Chargement du catalogue...</p>
             </div>
         </div>
 
@@ -267,7 +265,6 @@
         
         // --- VARIABLES GLOBALES POUR L'OVERLAY ---
         const openHistoryOverlay = document.getElementById('openHistoryOverlay');
-        const openRoleOverlay = document.getElementById('openRoleOverlay');
         const infoOverlay = document.getElementById('infoOverlay');
         const overlayBackdrop = document.getElementById('overlayBackdrop');
         const overlayClose = document.getElementById('overlayClose');
@@ -816,10 +813,6 @@
                 overlayBody.innerHTML = '<div class="p-2 text-red-600">Impossible de charger l\'historique admin.</div>';
             }
         });
-        openRoleOverlay.addEventListener('click', (e) => {
-            e.preventDefault();
-            openOverlay('Role admin', buildRoleOverlayHtml());
-        });
         overlayBackdrop.addEventListener('click', closeOverlay);
         overlayClose.addEventListener('click', closeOverlay);
         if (showAllObjectsBtn) {
@@ -880,6 +873,7 @@
 
         window.onload = () => fetchObjets("");
     </script>
+    <script src="admin-reports.js"></script>
 </body>
 </html>
 
