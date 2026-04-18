@@ -707,15 +707,13 @@
 
         usersBody.innerHTML = list.map(function (user) {
           const role = String(user.role || "user").toLowerCase();
-          const nextRole = role === "admin" ? "user" : "admin";
           return `
             <tr>
               <td style="font-weight:700;color:#0f172a;">${user.display_name || displayNameFromEmail(user.email)}</td>
               <td>${user.email || "-"}</td>
               <td>${role}</td>
               <td>
-                <button class="btn btn-outline" onclick="changeUserRole('${user.id}', '${nextRole}', '${user.email || ""}')">Passer ${nextRole}</button>
-                <button class="btn btn-danger" onclick="(function(){ if (String(localStorage.getItem('userId')||'') === '${user.id}') { alert('Vous ne pouvez pas supprimer votre propre compte.'); return; } deleteUser('${user.id}', '${user.email || ""}'); })()" style="margin-left:8px;">Supprimer</button>
+                <button class="btn btn-danger" onclick="(function(){ if (String(localStorage.getItem('userId')||'') === '${user.id}') { alert('Vous ne pouvez pas supprimer votre propre compte.'); return; } deleteUser('${user.id}', '${user.email || ""}'); })()">Supprimer</button>
               </td>
             </tr>
           `;
@@ -921,6 +919,7 @@
     window.changeUserRole = changeUserRole;
     window.deleteUser = deleteUser;
   </script>
+  <script src="sidebar-overlay-active.js"></script>
   <script src="admin-reports.js"></script>
 </body>
 </html>
