@@ -17,20 +17,58 @@ class SearchRequest(BaseModel):
     user_room: str = ""
 
 
-SYNONYMS = {
-    "light": "eclairage",
-    "lights": "eclairage",
-    "lamp": "eclairage",
-    "printer": "imprimante",
-    "projector": "projecteur",
-    "sensor": "capteur",
-    "cafeteria": "cafeteria",
-    "electromenager": "electromenager",
-    "electro-menager": "electromenager",
-    "cam": "camera",
-}
+SYNONYM_GROUPS = [
+    {"light", "lights", "lamp", "lampe", "luminaire", "ampoule", "eclairage", "lighting"},
+    {"printer", "imprimante", "imprim", "print"},
+    {"projector", "projecteur", "videoprojecteur", "beamer"},
+    {"sensor", "capteur", "detecteur", "detector"},
+    {"cam", "camera", "webcam", "surveillance"},
+    {"tv", "tele", "televiseur", "television", "ecran", "screen", "monitor"},
+    {
+        "coffee",
+        "cafe",
+        "cafes",
+        "cafeteria",
+        "cafetiere",
+        "espresso",
+        "nespresso",
+        "percolateur",
+        "coffeehouse",
+    },
+    {"machine", "maker", "coffeemaker", "coffeemachine", "cafemachine", "distributeur"},
+    {"electromenager", "electro", "menager", "electro-menager"},
+]
+
+
+def _build_synonym_map() -> dict[str, set[str]]:
+    synonym_map: dict[str, set[str]] = {}
+    for group in SYNONYM_GROUPS:
+        normalized_group = {normalize_text(term) for term in group if normalize_text(term)}
+        for term in normalized_group:
+            synonym_map.setdefault(term, set()).update(normalized_group)
+    return synonym_map
+
+
+SYNONYM_MAP = _build_synonym_map()
 
 STATUS_VALUES = ["active", "inactive", "disponible", "en_utilisation", "indisponible", "hors-ligne", "hors ligne"]
+
+
+def _tokenize_query(text: str) -> list[str]:
+    # Tokenization robuste: retire ponctuation/accents et conserve uniquement les mots utiles.
+    return [tok for tok in re.findall(r"[a-z0-9]+", normalize_text(text)) if len(tok) >= 2]
+
+
+def _expand_tokens(tokens: list[str]) -> list[str]:
+    expanded: list[str] = []
+    seen: set[str] = set()
+    for token in tokens:
+        variants = SYNONYM_MAP.get(token, {token})
+        for variant in variants:
+            if variant not in seen:
+                expanded.append(variant)
+                seen.add(variant)
+    return expanded
 
 
 def _extract_searchable_fields(item: dict) -> list[str]:
@@ -141,13 +179,10 @@ def search_things(data: SearchRequest = Body(...)):
             if normalize_text(s).startswith(q_norm)
         ]
 
-        tokens = [t for t in q_norm.split() if t] or [q_norm]
-        expanded_tokens = []
-        for t in tokens:
-            expanded_tokens.append(t)
-            if t in SYNONYMS:
-                expanded_tokens.append(SYNONYMS[t])
-        expanded_tokens = list(dict.fromkeys(expanded_tokens))
+        tokens = _tokenize_query(raw_query)
+        if not tokens and q_norm:
+            tokens = [q_norm]
+        expanded_tokens = _expand_tokens(tokens)
         index_scores = _collect_index_scores(expanded_tokens)
 
         mongo_or = []
@@ -178,7 +213,7 @@ def search_things(data: SearchRequest = Body(...)):
             item_id = str(item.get("id", "")).strip()
 
             token_ok = all(
-                any(term in content_norm for term in [tok, SYNONYMS.get(tok, tok)])
+                any(term in content_norm for term in SYNONYM_MAP.get(tok, {tok}))
                 for tok in tokens
             )
 

@@ -292,7 +292,7 @@ def compute_distance_and_room_flags(items: list[dict], user_x: float, user_y: fl
             fallback = coords_from_room(loc_room)
             ox, oy, oz = fallback["x"], fallback["y"], fallback["z"]
 
-        distance = _compute_logical_distance(ux, uy, uz, ox, oy, oz)
+        distance = 0.0 if same_room else _compute_logical_distance(ux, uy, uz, ox, oy, oz)
 
         item["distance"] = round(distance, 2)
         item["same_room"] = same_room
